@@ -25,7 +25,10 @@ docker compose up -d --build
 docker compose ps
 ```
 มีข้อมูลตัวอย่าง `data/raw_triage_case_rows.csv.gz` ใน repo แล้ว ไม่ต้องโหลดเพิ่ม; รอให้ containers ขึ้น แล้วเปิด Airflow: [http://localhost:8080](http://localhost:8080)
-เข้าด้วย user `admin`; ดูรหัสผ่านครั้งแรกด้วย `docker compose logs --tail 100 airflow`
+ชื่อผู้ใช้คือ `admin`; Airflow 3 อาจไม่แสดงรหัสใน log ให้อ่านไฟล์รหัสใน container ด้วยคำสั่งนี้ แล้วคัดลอกค่าที่อยู่ถัดจาก `admin` ไปใส่ช่อง Password:
+```powershell
+docker compose exec airflow sh -c 'cat /opt/airflow/simple_auth_manager_passwords.json.generated'
+```
 
 ### โหลดข้อมูลและสร้างคลัง
 1. ใน Airflow เปิด DAG `silent_sting_patient_dw` แล้วกด **Trigger DAG**
