@@ -1,0 +1,9 @@
+.env
+.user.yml
+data/raw_triage_case_rows.csv
+target/
+dbt_packages/
+logs/
+airflow_state/
+__pycache__/
+.ipynb_checkpoints/

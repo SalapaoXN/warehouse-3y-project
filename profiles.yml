@@ -1,0 +1,12 @@
+silent_sting_dw:
+  target: local
+  outputs:
+    local:
+      type: postgres
+      host: postgres
+      user: "{{ env_var('POSTGRES_USER', 'dw_user') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'dw_pass') }}"
+      port: 5432
+      dbname: "{{ env_var('POSTGRES_DB', 'silent_sting_dw') }}"
+      schema: ss_raw
+      threads: 4

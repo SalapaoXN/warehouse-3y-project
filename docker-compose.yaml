@@ -1,0 +1,61 @@
+name: silent-sting-dw
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-silent_sting_dw}
+      POSTGRES_USER: ${POSTGRES_USER:-dw_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dw_pass}
+    ports:
+      - '25433:5432'
+    volumes:
+      - silent_sting_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres
+    working_dir: /usr/app
+    entrypoint: ['/bin/bash', '-c', 'tail -f /dev/null']
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-silent_sting_dw}
+      POSTGRES_USER: ${POSTGRES_USER:-dw_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dw_pass}
+      DBT_PROFILES_DIR: /usr/app
+    volumes:
+      - .:/usr/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: silent-sting-airflow:local
+    command: standalone
+    ports:
+      - '127.0.0.1:8080:8080'
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__PARALLELISM: '4'
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/state/airflow.db
+      AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+      POSTGRES_DB: ${POSTGRES_DB:-silent_sting_dw}
+      POSTGRES_USER: ${POSTGRES_USER:-dw_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dw_pass}
+    volumes:
+      - ./airflow_state:/opt/airflow/state
+      - ./dags:/opt/airflow/dags:ro
+      - .:/opt/airflow/project:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  silent_sting_pgdata:

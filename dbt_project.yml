@@ -1,0 +1,46 @@
+name: 'silent_sting_dw'
+version: '1.0.0'
+config-version: 2
+profile: 'silent_sting_dw'
+
+model-paths: ['models']
+seed-paths: ['seeds']
+test-paths: ['tests']
+macro-paths: ['macros']
+analysis-paths: ['analyses']
+target-path: 'target'
+clean-targets:
+  - 'target'
+  - 'dbt_packages'
+
+models:
+  silent_sting_dw:
+    staging:
+      +schema: ss_stg
+      +materialized: table
+    intermediate:
+      +schema: ss_stg
+      +materialized: view
+    dimensions:
+      +schema: ss_dw
+      +materialized: table
+    facts:
+      +schema: ss_dw
+      +materialized: table
+    aggregates:
+      +schema: ss_mart
+      +materialized: table
+    reporting:
+      +schema: ss_mart
+      +materialized: view
+
+seeds:
+  silent_sting_dw:
+    +schema: ss_raw
+    +quote_columns: false
+    raw_source_manifest:
+      +column_types:
+        source_file_name: text
+        source_file_sha256: text
+        source_row_count: bigint
+        prepared_at_utc: timestamptz

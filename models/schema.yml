@@ -1,0 +1,185 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: ss_raw
+    tables:
+      - name: raw_triage_case_rows
+        description: 'Raw text table bulk-loaded from the prepared CSV; one source row plus its file-local row number.'
+        columns:
+          - name: source_row_number
+            tests: [not_null, unique]
+          - name: patient_id
+            description: 'The requested patient-level business grain; sensitive identifier retained for the prototype.'
+            tests: [not_null, unique]
+
+seeds:
+  - name: raw_source_manifest
+    description: 'One-row manifest for the source snapshot loaded into the raw table.'
+    columns:
+      - name: source_file_sha256
+        tests: [not_null, unique]
+      - name: source_row_count
+        tests: [not_null]
+
+models:
+  - name: stg_triage_cases
+    description: 'Typed staging records, including accepted/quarantined status and both delay values.'
+    columns:
+      - name: source_row_number
+        tests: [not_null, unique]
+      - name: patient_id
+        tests: [not_null]
+      - name: validation_status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['accepted', 'quarantined']
+      - name: source_file_sha256
+        tests: [not_null]
+      - name: bite_at
+        tests: [not_null]
+      - name: arrived_at
+        tests: [not_null]
+
+  - name: int_triage_cases_accepted
+    description: 'Accepted records; patient_id must identify exactly one row in the current snapshot.'
+    columns:
+      - name: source_row_number
+        tests: [not_null, unique]
+      - name: patient_id
+        tests: [not_null, unique]
+      - name: validation_status
+        tests:
+          - accepted_values:
+              values: ['accepted']
+
+  - name: dim_date
+    description: 'Calendar dimension reused for bite and arrival dates.'
+    columns:
+      - name: date_key
+        tests: [not_null, unique]
+      - name: full_date
+        tests: [not_null, unique]
+
+  - name: dim_location
+    description: 'Province-based location dimension; region remains null until an approved mapping exists.'
+    columns:
+      - name: location_key
+        tests: [not_null, unique]
+      - name: province_code
+        tests: [not_null, unique]
+      - name: province_name
+        tests: [not_null]
+
+  - name: dim_bite_source
+    columns:
+      - name: bite_source_key
+        tests: [not_null, unique]
+      - name: source_code
+        tests: [not_null, unique]
+      - name: bite_source_name
+        tests: [not_null]
+
+  - name: dim_bite_position
+    columns:
+      - name: bite_position_key
+        tests: [not_null, unique]
+      - name: position_code
+        tests: [not_null, unique]
+      - name: bite_position_name
+        tests: [not_null]
+
+  - name: dim_symptom_profile
+    description: 'One row per distinct observed combination of source symptom fields; no clinical severity is inferred.'
+    columns:
+      - name: symptom_profile_key
+        tests: [not_null, unique]
+
+  - name: dim_triage
+    description: 'Triage codes under an unspecified scale; severity ordering is not inferred.'
+    columns:
+      - name: triage_key
+        tests: [not_null, unique]
+      - name: triage_scale_code
+        tests: [not_null]
+      - name: triage_level
+        tests: [not_null]
+      - name: triage_level_label
+        tests: [not_null]
+
+  - name: fact_bite_triage
+    description: 'One row per patient_id in the current source snapshot; patient_id is both the grain and primary business key.'
+    columns:
+      - name: patient_id
+        tests: [not_null, unique]
+      - name: source_row_number
+        tests: [not_null, unique]
+      - name: source_batch_id
+        tests: [not_null]
+      - name: bite_date_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: arrival_date_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+      - name: location_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: location_key
+      - name: bite_source_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_bite_source')
+              field: bite_source_key
+      - name: bite_position_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_bite_position')
+              field: bite_position_key
+      - name: symptom_profile_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_symptom_profile')
+              field: symptom_profile_key
+      - name: triage_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_triage')
+              field: triage_key
+      - name: patient_count
+        tests:
+          - accepted_values:
+              values: [1]
+
+  - name: agg_bite_triage_monthly_location_source_level
+    description: 'Arrival month x location x bite source x triage; additive components retained for safe roll-up.'
+    columns:
+      - name: arrival_month
+        tests: [not_null]
+      - name: patient_count
+        tests: [not_null]
+
+  - name: rpt_bite_triage_monthly_location_source_level
+    description: 'Monthly patient-count and triage workload summary.'
+
+  - name: rpt_bite_triage_quarterly_location
+    description: 'Quarterly roll-up calculated from additive monthly components.'
+
+  - name: rpt_bite_triage_daily_location_source_level
+    description: 'Daily arrival detail for drill-down.'
+
+  - name: rpt_bite_triage_location_source_level_cube
+    description: 'CUBE subtotals across location, bite source, and triage level.'
