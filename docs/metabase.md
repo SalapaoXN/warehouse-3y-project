@@ -75,6 +75,35 @@ Metabase อยู่ใน Docker network เดียวกับ PostgreSQL �
 สำหรับ drill-down ให้เริ่มดูรายไตรมาส แล้วเปิดการ์ดเปรียบเทียบจังหวัด/แหล่งสัตว์/ระดับคัดกรอง
 ที่ละเอียดขึ้นจากรายเดือน; ตรวจว่า filter ของ dashboard เชื่อมกับการ์ดที่ใช้ field เดียวกัน
 
+## อยากรู้อะไร ให้เปิด Mart ไหน
+
+| คำถาม | ตารางใน `ss_mart` | ค่าที่ใช้ | วิธีแสดงผล |
+| --- | --- | --- | --- |
+| จำนวนผู้ป่วยเปลี่ยนตามเดือนและชนิดสัตว์อย่างไร | `rpt_bite_triage_monthly_location_source_level` | Sum of `patient_count` | Line; แกน X = `arrival_month`; แยกเส้น = `bite_source` |
+| จังหวัดใดมีจำนวนมากในช่วงที่เลือก | ตารางรายเดือนเดียวกัน | Sum of `patient_count` | Bar; แกน = `location`; เรียงจากค่ามากไปน้อย |
+| จำนวนรายวันเป็นอย่างไร | `rpt_bite_triage_daily_location_source_level` | Sum of `patient_count` | Line; แกน X = `arrival_date`; ใช้ filter จังหวัด/ชนิดสัตว์ได้ |
+| เปรียบเทียบรายไตรมาส | `rpt_bite_triage_quarterly_location` | Sum of `patient_count` | Line; แกน X = `arrival_quarter`; แยกเส้น = `location` หรือ `bite_source` |
+| ดูยอดรวมและ subtotal หลายมิติ | `rpt_bite_triage_location_source_level_cube` | `patient_count` | Table; ใช้ `is_all_locations`, `is_all_bite_sources`, `is_all_triage_levels` แยกแถว ALL |
+| ดูรายละเอียดหนึ่งแถวต่อหนึ่งเหตุการณ์ตามสมมติฐาน patient ID | `rpt_bite_triage_patient_detail` | `patient_count` | Table; ใช้ค้นหรือกรองวันที่ จังหวัด สัตว์ อาการ และระดับคัดกรอง |
+
+## วิธีสร้างคำถามใน Metabase
+
+1. กด **New → Question → Table**, เลือกฐานข้อมูล `silent_sting_dw` แล้วเลือก schema `ss_mart`
+2. เลือกตารางตามคำถามจากตารางด้านบน
+3. กด **Summarize**; เลือก **Sum of Patient Count** (อย่าเลือก Count of rows เพราะ Mart มีการรวมข้อมูลไว้แล้ว)
+4. ใน **Group by** เลือกมิติ เช่น `Arrival Month`, `Location`, `Bite Source` หรือ `Triage Level Label`
+5. ถ้าต้องการเทียบหลายชนิดสัตว์ ให้เพิ่ม `Bite Source` ใน Group by แล้วเลือก Visualization เป็น **Line**; ตั้ง `Arrival Month` เป็นแกน X
+6. ใช้ **Filter** เลือกช่วงวัน จังหวัด ชนิดสัตว์ หรือระดับคัดกรอง แล้วกด **Save**
+7. เพิ่มคำถามลง Dashboard; เพิ่ม Dashboard filter แล้วเชื่อมกับ field ที่ตรงกันในการ์ดแต่ละใบ
+
+### ข้อควรระวังในการอ่านผล
+
+- `patient_count` เป็นจำนวนที่รวมมาแล้ว จึงใช้ **Sum** เมื่อต้องรวมข้ามจังหวัด สัตว์ หรือระดับคัดกรอง
+- Mart รายเดือนมีเฉพาะเดือนที่พบข้อมูล ไม่มีแถวเดือนที่เป็นศูนย์; จุดที่หายไปจึงหมายถึงไม่มีแถวข้อมูลใน snapshot ไม่ได้ยืนยันว่าไม่มีเหตุการณ์จริง
+- `avg_*` และ `*_share` เป็นค่าเฉลี่ย/สัดส่วน ณ ระดับแถวของ Mart; อย่านำค่าเหล่านี้มาเฉลี่ยซ้ำข้ามจังหวัดหรือกลุ่มโดยตรง เพราะแต่ละกลุ่มมีจำนวนตัวอย่างต่างกัน
+- ระดับคัดกรองเป็นรหัสตามข้อมูลต้นทาง โปรเจกต์ไม่ได้สมมติว่าตัวเลขสูงหรือต่ำแปลว่ารุนแรงกว่า
+- ช่วงเวลามาจากวันที่มาถึง; ชุดข้อมูลเป็น snapshot และมีวันในอนาคตตามที่ระบุในข้อจำกัดด้านล่าง
+
 ## ข้อจำกัดและข้อมูล
 
 - Dashboard นี้แสดงจำนวนเคสและค่าที่สรุปจากข้อมูล ไม่ใช่อัตราอุบัติการณ์ เพราะไม่มีตัวหารประชากร
