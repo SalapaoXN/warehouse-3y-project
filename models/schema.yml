@@ -78,6 +78,9 @@ models:
     columns:
       - name: symptom_profile_key
         tests: [not_null, unique]
+      - name: symptom_profile_label
+        description: 'Readable label for the observed symptom combination; does not infer clinical severity.'
+        tests: [not_null]
 
   - name: dim_triage
     description: 'Triage codes under an unspecified scale; severity ordering is not inferred.'

@@ -1,3 +1,16 @@
+{{ config(
+    post_hook=[
+        "ALTER TABLE {{ this }} ADD CONSTRAINT pk_fact_bite_triage_{{ invocation_id.replace('-', '')[:8] }} PRIMARY KEY (patient_id)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_bite_date FOREIGN KEY (bite_date_key) REFERENCES {{ ref('dim_date') }} (date_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_arrival_date FOREIGN KEY (arrival_date_key) REFERENCES {{ ref('dim_date') }} (date_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_location FOREIGN KEY (location_key) REFERENCES {{ ref('dim_location') }} (location_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_bite_source FOREIGN KEY (bite_source_key) REFERENCES {{ ref('dim_bite_source') }} (bite_source_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_bite_position FOREIGN KEY (bite_position_key) REFERENCES {{ ref('dim_bite_position') }} (bite_position_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_symptom_profile FOREIGN KEY (symptom_profile_key) REFERENCES {{ ref('dim_symptom_profile') }} (symptom_profile_key)",
+        "ALTER TABLE {{ this }} ADD CONSTRAINT fk_fact_bite_triage_triage FOREIGN KEY (triage_key) REFERENCES {{ ref('dim_triage') }} (triage_key)"
+    ]
+) }}
+
 with accepted as (
     select *
     from {{ ref('int_triage_cases_accepted') }}

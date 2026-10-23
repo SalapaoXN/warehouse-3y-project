@@ -1,3 +1,5 @@
+{{ config(post_hook="ALTER TABLE {{ this }} ADD CONSTRAINT pk_dim_location_{{ invocation_id.replace('-', '')[:8] }} PRIMARY KEY (location_key)") }}
+
 with members as (
     select distinct
         coalesce(province_name_raw, '__MISSING__') as province_code

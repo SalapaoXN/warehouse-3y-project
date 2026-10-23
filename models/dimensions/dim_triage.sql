@@ -1,3 +1,5 @@
+{{ config(post_hook="ALTER TABLE {{ this }} ADD CONSTRAINT pk_dim_triage_{{ invocation_id.replace('-', '')[:8] }} PRIMARY KEY (triage_key)") }}
+
 with members as (
     select distinct coalesce(triage_level_code, '__MISSING__') as triage_level
     from {{ ref('int_triage_cases_accepted') }}

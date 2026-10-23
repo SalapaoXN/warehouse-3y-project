@@ -65,7 +65,7 @@ services:
       MB_DB_FILE: /metabase.db/metabase.db
       JAVA_TIMEZONE: Asia/Bangkok
     volumes:
-      - metabase_data:/metabase.db
+      - metabase_data_v2:/metabase.db
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,4 +88,5 @@ services:
 
 volumes:
   silent_sting_pgdata:
-  metabase_data:
+  # Keep the previous Metabase app database volume intact for rollback.
+  metabase_data_v2:

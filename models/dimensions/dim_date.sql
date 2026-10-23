@@ -1,3 +1,5 @@
+{{ config(post_hook="ALTER TABLE {{ this }} ADD CONSTRAINT pk_dim_date_{{ invocation_id.replace('-', '')[:8] }} PRIMARY KEY (date_key)") }}
+
 with all_dates as (
     select bite_at::date as full_date
     from {{ ref('int_triage_cases_accepted') }}

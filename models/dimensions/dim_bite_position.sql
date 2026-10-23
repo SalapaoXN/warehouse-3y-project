@@ -1,3 +1,5 @@
+{{ config(post_hook="ALTER TABLE {{ this }} ADD CONSTRAINT pk_dim_bite_position_{{ invocation_id.replace('-', '')[:8] }} PRIMARY KEY (bite_position_key)") }}
+
 with members as (
     select distinct coalesce(bite_position_code, '__MISSING__') as position_code
     from {{ ref('int_triage_cases_accepted') }}

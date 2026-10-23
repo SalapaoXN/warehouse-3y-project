@@ -44,10 +44,15 @@
 ### เข้า Metabase และเพิ่มฐานข้อมูล
 1. รอให้บัญชีเริ่มต้นถูกสร้าง ตรวจข้อความด้วย `docker compose logs metabase_bootstrap`
 2. เข้า [http://localhost:23000](http://localhost:23000):
-   - ชื่อ: **Admin User**; Email: `admin@example.com`
-   - Password: `SilentStingDemo2026!`
+   - ค่าเริ่มต้น (เฉพาะ volume ใหม่): Email `admin@example.com`, Password `SilentStingDemo2026!`; volume เดิมใช้บัญชีและรหัสเดิม
+   - ถ้าลืมรหัส ให้หยุด Metabase แล้วสร้าง reset token:
+     ```powershell
+     docker compose stop metabase
+     docker compose run --rm --no-deps --entrypoint sh metabase -c 'java --add-opens java.base/java.nio=ALL-UNNAMED -jar /app/metabase.jar reset-password your-admin-email@example.com'
+     docker compose up -d metabase
+     ```
+     แทนอีเมลตัวอย่างด้วยอีเมลที่ใช้ตั้งบัญชี; เปิด `http://localhost:23000/auth/reset_password/<token>` โดยใช้ token จากผลคำสั่ง แล้วตั้งรหัสใหม่
    - อีเมลเป็นชื่อเข้าระบบ ไม่ต้องมีกล่องเมลจริงหรือ SMTP
-   - บัญชีนี้สร้างเมื่อ Metabase ยังไม่เคยตั้งค่า; volume เดิมจะคงบัญชีเดิมไว้
    - รหัสผ่านนี้เป็นรหัสสาธารณะสำหรับเดโมในเครื่องที่เปิดบน localhost เท่านั้น
 3. หลัง DAG สำเร็จ สร้างผู้ใช้อ่าน PostgreSQL สำหรับ Metabase:
    ```powershell
@@ -57,6 +62,9 @@
 4. เมื่อเห็น `silent_sting_dw=#` ให้พิมพ์ `\password metabase_reader` แล้ว `\q` เพื่อกลับ PowerShell
 5. ใน Metabase เลือกเพิ่มฐานข้อมูล PostgreSQL: Host `postgres`, Port `5432`, Database `silent_sting_dw`
 6. ใช้ User `metabase_reader` และรหัสที่ตั้งในข้อ 4; เลือก schema `ss_mart` กับ `ss_dw` แล้ว Sync schema
+7. dbt จะสร้าง Primary/Foreign Key constraints ให้ Fact และ Dimension; หลัง DAG สำเร็จ Metabase จะตรวจความสัมพันธ์ตอน Sync schema
+8. ให้ Fact แสดงชื่อแทน FK โดยรัน `python scripts/configure_metabase_fk_display.py` หลัง Sync schema; ใช้บัญชีเริ่มต้นด้านบน หรือกำหนด `METABASE_ADMIN_EMAIL` และ `METABASE_ADMIN_PASSWORD` หากเปลี่ยนบัญชี
+   - สคริปต์ตั้งค่า metadata ใน Metabase ให้ใช้ชื่อจาก Dimension; โคลนใหม่ให้รันคำสั่งนี้หนึ่งครั้งหลังเพิ่มฐานข้อมูล
 
 ### ใช้ CSV อื่นและปิดระบบ
 - อัปเดตโปรเจกต์เดิม: `git pull` → `docker compose up -d --build` → Trigger DAG ใหม่; จากนั้นใน Metabase สั่ง Sync schema เพื่อซ่อน field เก่าที่ cache ไว้
