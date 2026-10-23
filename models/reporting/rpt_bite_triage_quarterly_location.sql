@@ -7,10 +7,6 @@ with rolled_up as (
         sum(a.patient_count)::bigint as patient_count,
         sum(a.source_delay_minutes_sum)::numeric(20, 4) as source_delay_minutes_sum,
         sum(a.source_delay_observation_count)::bigint as source_delay_observation_count,
-        sum(a.calculated_delay_minutes_sum)::numeric(20, 4)
-            as calculated_delay_minutes_sum,
-        sum(a.calculated_delay_observation_count)::bigint
-            as calculated_delay_observation_count,
         sum(a.heart_rate_sum)::numeric(20, 4) as heart_rate_sum,
         sum(a.heart_rate_observation_count)::bigint as heart_rate_observation_count,
         sum(a.systolic_bp_sum)::numeric(20, 4) as systolic_bp_sum,
@@ -36,8 +32,6 @@ select
     r.patient_count,
     r.source_delay_minutes_sum
         / nullif(r.source_delay_observation_count, 0) as avg_source_delay_min,
-    r.calculated_delay_minutes_sum
-        / nullif(r.calculated_delay_observation_count, 0) as avg_calculated_delay_min,
     r.heart_rate_sum / nullif(r.heart_rate_observation_count, 0) as avg_heart_rate_bpm,
     r.systolic_bp_sum / nullif(r.systolic_bp_observation_count, 0) as avg_systolic_bp_mmhg,
     r.paralysis_positive_count,

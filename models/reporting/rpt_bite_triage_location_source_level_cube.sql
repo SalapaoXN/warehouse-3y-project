@@ -9,7 +9,7 @@ with cube_rows as (
         grouping(f.triage_key) = 1 as is_all_triage_levels,
         case when grouping(f.triage_key) = 1 then null::bigint else f.triage_key end
             as triage_key,
-        sum(f.patient_count)::bigint as patient_count,
+        count(*)::bigint as patient_count,
         count(*) filter (where symptoms.muscle_paralysis_present is true)::bigint
             as paralysis_positive_count,
         count(symptoms.muscle_paralysis_present)::bigint as paralysis_assessed_count,

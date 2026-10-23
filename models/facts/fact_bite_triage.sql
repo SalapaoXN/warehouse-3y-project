@@ -5,9 +5,6 @@ with accepted as (
 
 select
     a.patient_id,
-    md5(a.source_file_sha256)::uuid as source_batch_id,
-    a.source_file_sha256,
-    a.source_row_number,
     bite_date.date_key as bite_date_key,
     arrival_date.date_key as arrival_date_key,
     location.location_key,
@@ -20,12 +17,8 @@ select
     a.bite_at as bite_timestamp,
     a.arrived_at as arrival_timestamp,
     a.source_time_since_bite_min as time_since_bite_min,
-    a.calculated_time_since_bite_min,
     a.heart_rate_bpm,
-    a.systolic_bp_mmhg as blood_pressure_systolic,
-    1::smallint as patient_count,
-    a.loaded_at,
-    a.dbt_invocation_id
+    a.systolic_bp_mmhg as blood_pressure_systolic
 from accepted as a
 join {{ ref('dim_date') }} as bite_date
     on a.bite_at::date = bite_date.full_date

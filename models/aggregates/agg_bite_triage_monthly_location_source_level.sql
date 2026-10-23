@@ -3,13 +3,10 @@ select
     f.location_key,
     f.bite_source_key,
     f.triage_key,
-    sum(f.patient_count)::bigint as patient_count,
+    count(*)::bigint as patient_count,
     coalesce(sum(f.time_since_bite_min), 0)::numeric(20, 4)
         as source_delay_minutes_sum,
     count(f.time_since_bite_min)::bigint as source_delay_observation_count,
-    coalesce(sum(f.calculated_time_since_bite_min), 0)::numeric(20, 4)
-        as calculated_delay_minutes_sum,
-    count(f.calculated_time_since_bite_min)::bigint as calculated_delay_observation_count,
     coalesce(sum(f.heart_rate_bpm), 0)::numeric(20, 4) as heart_rate_sum,
     count(f.heart_rate_bpm)::bigint as heart_rate_observation_count,
     coalesce(sum(f.blood_pressure_systolic), 0)::numeric(20, 4) as systolic_bp_sum,

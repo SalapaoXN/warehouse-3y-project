@@ -2,7 +2,6 @@
 
 with normalized as (
     select
-        r.source_row_number::bigint as source_row_number,
         nullif(btrim(r.patient_id), '') as patient_id,
         nullif(btrim(r.age), '') as age_source_value,
         nullif(btrim(r.gender), '') as gender_source_value,
@@ -17,13 +16,8 @@ with normalized as (
         nullif(btrim(r.arrival_timestamp), '') as arrival_timestamp_value,
         nullif(btrim(r.province), '') as province_source_value,
         nullif(btrim(r.triage_level), '') as triage_level_source_value,
-        nullif(btrim(r.bite_position), '') as bite_position_source_value,
-        m.source_file_name,
-        m.source_file_sha256,
-        cast('{{ run_started_at }}' as timestamptz) as loaded_at,
-        '{{ invocation_id }}'::text as dbt_invocation_id
+        nullif(btrim(r.bite_position), '') as bite_position_source_value
     from {{ source('raw', 'raw_triage_case_rows') }} as r
-    cross join {{ ref('raw_source_manifest') }} as m
 ),
 
 typed as (
@@ -50,20 +44,11 @@ typed as (
     from normalized
 ),
 
-with_delay as (
-    select
-        *,
-        case when bite_at is not null and arrived_at is not null
-            then (extract(epoch from (arrived_at - bite_at)) / 60.0)::numeric(12, 4)
-        end as calculated_time_since_bite_min
-    from typed
-),
-
 validated as (
     select
         *,
         nullif(concat_ws(';',
-            case when source_row_number is null then 'missing_source_row_number' end,
+            case when patient_id is null then 'missing_patient_id' end,
             case when bite_timestamp_value is null then 'missing_bite_timestamp'
                  when bite_at is null then 'invalid_bite_timestamp' end,
             case when arrival_timestamp_value is null then 'missing_arrival_timestamp'
@@ -82,25 +67,15 @@ validated as (
                 then 'invalid_paralysis_flag' end,
             case when coagulation_value is not null and coagulation_value not in ('0', '1')
                 then 'invalid_coagulation_flag' end
-        ), '') as validation_errors,
-        case
-            when source_time_since_bite_min is not null
-             and calculated_time_since_bite_min is not null
-            then source_time_since_bite_min = calculated_time_since_bite_min
-        end as delay_matches_timestamp
-    from with_delay
+        ), '') as validation_errors
+    from typed
 )
 
 select
-    source_file_name,
-    source_file_sha256,
-    source_row_number,
     patient_id,
     age_at_event,
     gender_source_value as gender_code,
     source_time_since_bite_min,
-    calculated_time_since_bite_min,
-    delay_matches_timestamp,
     heart_rate_bpm,
     systolic_bp_mmhg,
     swelling_source_value as swelling_code,
@@ -114,7 +89,5 @@ select
     bite_position_source_value as bite_position_code,
     case when validation_errors is null then 'accepted' else 'quarantined' end
         as validation_status,
-    validation_errors,
-    loaded_at,
-    dbt_invocation_id
+    validation_errors
 from validated

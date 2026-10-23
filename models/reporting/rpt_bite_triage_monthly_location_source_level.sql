@@ -7,8 +7,6 @@ select
     a.patient_count,
     a.source_delay_minutes_sum
         / nullif(a.source_delay_observation_count, 0) as avg_source_delay_min,
-    a.calculated_delay_minutes_sum
-        / nullif(a.calculated_delay_observation_count, 0) as avg_calculated_delay_min,
     a.heart_rate_sum / nullif(a.heart_rate_observation_count, 0) as avg_heart_rate_bpm,
     a.systolic_bp_sum / nullif(a.systolic_bp_observation_count, 0) as avg_systolic_bp_mmhg,
     a.paralysis_positive_count,

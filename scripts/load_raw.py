@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path
 
 import psycopg2
@@ -17,7 +18,7 @@ from psycopg2 import sql
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_PATH = PROJECT_ROOT / "data" / "raw_triage_case_rows.csv"
 RAW_GZIP_PATH = PROJECT_ROOT / "data" / "raw_triage_case_rows.csv.gz"
-MANIFEST_PATH = PROJECT_ROOT / "seeds" / "raw_source_manifest.csv"
+MANIFEST_PATH = PROJECT_ROOT / "data" / "raw_source_manifest.csv"
 SCHEMA = "ss_raw"
 TABLE = "raw_triage_case_rows"
 COLUMNS = [
@@ -36,8 +37,8 @@ COLUMNS = [
     "province",
     "triage_level",
     "bite_position",
-    "source_row_number",
 ]
+PREPARED_COLUMNS = [*COLUMNS, "source_row_number"]
 
 
 def expected_row_count() -> tuple[int, dict[str, str]]:
@@ -57,9 +58,11 @@ def verify_header(path: Path) -> None:
     raw_file = open_raw_csv(path)
     with raw_file:
         header = next(csv.reader(raw_file), None)
-    if header != COLUMNS:
+    if header not in (COLUMNS, PREPARED_COLUMNS):
         raise ValueError(
-            "Unexpected prepared CSV header. Expected exactly: " + ", ".join(COLUMNS)
+            "Unexpected prepared CSV header. Expected: "
+            + ", ".join(COLUMNS)
+            + " (optional trailing source_row_number is ignored)"
         )
 
 
@@ -123,9 +126,19 @@ def load() -> dict[str, object]:
         with connection.cursor() as cursor:
             cursor.execute(sql.SQL("CREATE SCHEMA IF NOT EXISTS {} ").format(sql.Identifier(SCHEMA)))
             cursor.execute(
+                sql.SQL("DROP TABLE IF EXISTS {}.raw_source_manifest").format(
+                    sql.Identifier(SCHEMA)
+                )
+            )
+            cursor.execute(
+                sql.SQL("DROP TABLE IF EXISTS {}.{}").format(
+                    sql.Identifier(SCHEMA), sql.Identifier(TABLE)
+                )
+            )
+            cursor.execute(
                 sql.SQL(
                     """
-                    CREATE TABLE IF NOT EXISTS {}.{} (
+                    CREATE TABLE {}.{} (
                         patient_id text,
                         age text,
                         gender text,
@@ -140,16 +153,10 @@ def load() -> dict[str, object]:
                         arrival_timestamp text,
                         province text,
                         triage_level text,
-                        bite_position text,
-                        source_row_number bigint NOT NULL
+                        bite_position text
                     )
                     """
                 ).format(sql.Identifier(SCHEMA), sql.Identifier(TABLE))
-            )
-            cursor.execute(
-                sql.SQL("TRUNCATE TABLE {}.{}").format(
-                    sql.Identifier(SCHEMA), sql.Identifier(TABLE)
-                )
             )
             copy_command = sql.SQL(
                 "COPY {}.{} ({}) FROM STDIN WITH (FORMAT CSV, HEADER TRUE, ENCODING 'UTF8')"
@@ -158,8 +165,18 @@ def load() -> dict[str, object]:
                 sql.Identifier(TABLE),
                 sql.SQL(", ").join(map(sql.Identifier, COLUMNS)),
             )
-            with open_raw_csv(raw_path) as raw_file:
-                cursor.copy_expert(copy_command.as_string(connection), raw_file)
+            with open_raw_csv(raw_path) as raw_file, tempfile.TemporaryFile(
+                mode="w+t", newline="", encoding="utf-8"
+            ) as projected_file:
+                reader = csv.DictReader(raw_file)
+                writer = csv.DictWriter(projected_file, fieldnames=COLUMNS)
+                writer.writeheader()
+                for row in reader:
+                    writer.writerow({column: row.get(column) for column in COLUMNS})
+                projected_file.seek(0)
+                cursor.copy_expert(
+                    copy_command.as_string(connection), projected_file
+                )
             cursor.execute(
                 sql.SQL("SELECT count(*) FROM {}.{}").format(
                     sql.Identifier(SCHEMA), sql.Identifier(TABLE)

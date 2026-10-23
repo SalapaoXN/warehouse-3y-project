@@ -4,9 +4,8 @@ select
     s.bite_source_name as bite_source,
     t.triage_scale_code,
     t.triage_level_label,
-    sum(f.patient_count)::bigint as patient_count,
+    count(*)::bigint as patient_count,
     avg(f.time_since_bite_min) as avg_source_delay_min,
-    avg(f.calculated_time_since_bite_min) as avg_calculated_delay_min,
     avg(f.heart_rate_bpm) as avg_heart_rate_bpm,
     avg(f.blood_pressure_systolic) as avg_systolic_bp_mmhg,
     count(*) filter (where symptoms.muscle_paralysis_present is true)::bigint

@@ -4,7 +4,7 @@ with cube_total as (
     where is_all_locations and is_all_bite_sources and is_all_triage_levels
 ),
 fact_total as (
-    select sum(patient_count)::bigint as patient_count
+    select count(*)::bigint as patient_count
     from {{ ref('fact_bite_triage') }}
 )
 

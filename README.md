@@ -5,10 +5,11 @@
 ### โครงสร้างระบบ
 - `docker-compose.yaml` เปิด PostgreSQL, dbt, Airflow, Metabase และสร้างบัญชีผู้ดูแล Metabase ครั้งแรก
 - `dags/` ควบคุมลำดับโหลดข้อมูลและสั่ง `dbt build`; `scripts/` เตรียม/โหลดข้อมูลและตั้งค่าผู้ใช้
-- `data/` เก็บ CSV ตัวอย่าง; `seeds/` เก็บ manifest และ checksum สำหรับตรวจไฟล์
+- `data/` เก็บ CSV ตัวอย่างและ manifest/checksum สำหรับตรวจไฟล์ก่อนโหลด; manifest ไม่ถูก seed เข้า PostgreSQL
 - `models/staging/` ทำความสะอาด; `models/intermediate/` แยกข้อมูลใช้ได้กับ quarantine
 - `models/dimensions/` สร้างมิติ; `models/facts/` สร้าง Fact โดยสมมติหนึ่ง `patient_id` ต่อหนึ่งเหตุการณ์
 - `models/aggregates/` และ `models/reporting/` สร้าง Mart พร้อมวิเคราะห์ใน Metabase
+- Fact ไม่เก็บ `patient_count=1`, เวลาที่คำนวณซ้ำ หรือ metadata ติดตามไฟล์/รอบรัน; Mart คำนวณยอดเหตุการณ์ด้วย `count(*)`
 - `tests/`, `models/schema.yml` ตรวจคุณภาพ; `profiles.yml`, `dbt_project.yml`, `macros/` ตั้งค่า dbt
 - ลำดับข้อมูล: `ss_raw` → `ss_stg` → `ss_dw` (Fact/Dimensions) → `ss_mart` (ตารางวิเคราะห์)
 
@@ -38,6 +39,7 @@
    docker compose exec -T postgres psql -U dw_user -d silent_sting_dw -c "SELECT COUNT(*) FROM ss_mart.rpt_bite_triage_monthly_location_source_level;"
    ```
    ใช้ `dw_user`/`silent_sting_dw` ตามค่าตั้งต้น; ถ้าแก้ `.env` ให้เปลี่ยนค่าในคำสั่งตามนั้น
+   ตัวโหลดตรวจจำนวนแถวกับ manifest ในไฟล์ก่อน commit; metadata สำหรับ trace ไม่ถูกเก็บเป็นคอลัมน์ในคลัง
 
 ### เข้า Metabase และเพิ่มฐานข้อมูล
 1. รอให้บัญชีเริ่มต้นถูกสร้าง ตรวจข้อความด้วย `docker compose logs metabase_bootstrap`
@@ -57,6 +59,7 @@
 6. ใช้ User `metabase_reader` และรหัสที่ตั้งในข้อ 4; เลือก schema `ss_mart` กับ `ss_dw` แล้ว Sync schema
 
 ### ใช้ CSV อื่นและปิดระบบ
+- อัปเดตโปรเจกต์เดิม: `git pull` → `docker compose up -d --build` → Trigger DAG ใหม่; จากนั้นใน Metabase สั่ง Sync schema เพื่อซ่อน field เก่าที่ cache ไว้
 - ใช้ CSV อื่น: `python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"` แล้ว Trigger DAG ใหม่
 - รันโดยไม่ใช้ Airflow: `docker compose exec airflow python /opt/airflow/project/scripts/load_raw.py` แล้ว `docker compose exec dbt dbt build`
 - ปิดชั่วคราว: `docker compose down`; เปิดใหม่ใช้ `docker compose up -d`
@@ -77,7 +80,7 @@
 | ดู subtotal | `rpt_bite_triage_location_source_level_cube` | Table; `is_all_*` ระบุ subtotal |
 | ดูเหตุการณ์รายคน | `rpt_bite_triage_patient_detail` | Table; กรองวัน จังหวัด สัตว์ อาการ หรือระดับคัดกรอง; ไม่มี `patient_id` |
 
-ใช้ Sum ของ `patient_count` เพราะ Mart รวมยอดไว้แล้ว; อย่าใช้ Count of rows หรือเฉลี่ย `avg_*`/`*_share` ซ้ำข้ามกลุ่ม เดือนที่ไม่มีข้อมูลจะไม่แสดงเป็นศูนย์ และ CUBE มีทั้งแถวปกติกับ subtotal
+ใช้ Sum ของ `patient_count` ใน Mart เพราะเป็นยอดรวมของหลายเหตุการณ์; Fact ไม่มี `patient_count` ซ้ำทุกแถวแล้ว อย่าใช้ Count of rows กับ Mart หรือเฉลี่ย `avg_*`/`*_share` ซ้ำข้ามกลุ่ม เดือนที่ไม่มีข้อมูลจะไม่แสดงเป็นศูนย์ และ CUBE มีทั้งแถวปกติกับ subtotal
 
 ## 3. เป้าหมายและข้อจำกัด
 

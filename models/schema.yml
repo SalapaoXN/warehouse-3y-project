@@ -5,31 +5,16 @@ sources:
     schema: ss_raw
     tables:
       - name: raw_triage_case_rows
-        description: 'Raw text table bulk-loaded from the prepared CSV; one source row plus its file-local row number.'
+        description: 'Raw text table bulk-loaded from the prepared CSV; one source row per patient_id.'
         columns:
-          - name: source_row_number
-            tests: [not_null, unique]
           - name: patient_id
             description: 'The requested patient-level business grain; sensitive identifier retained for the prototype.'
             tests: [not_null, unique]
 
-seeds:
-  - name: raw_source_manifest
-    description: 'One-row manifest for the source snapshot loaded into the raw table.'
-    columns:
-      - name: source_file_sha256
-        tests: [not_null, unique]
-      - name: prepared_file_sha256
-        tests: [not_null, unique]
-      - name: source_row_count
-        tests: [not_null]
-
 models:
   - name: stg_triage_cases
-    description: 'Typed staging records, including accepted/quarantined status and both delay values.'
+    description: 'Typed staging records with accepted/quarantined status.'
     columns:
-      - name: source_row_number
-        tests: [not_null, unique]
       - name: patient_id
         tests: [not_null]
       - name: validation_status
@@ -37,8 +22,6 @@ models:
           - not_null
           - accepted_values:
               values: ['accepted', 'quarantined']
-      - name: source_file_sha256
-        tests: [not_null]
       - name: bite_at
         tests: [not_null]
       - name: arrived_at
@@ -47,8 +30,6 @@ models:
   - name: int_triage_cases_accepted
     description: 'Accepted records; patient_id must identify exactly one row in the current snapshot.'
     columns:
-      - name: source_row_number
-        tests: [not_null, unique]
       - name: patient_id
         tests: [not_null, unique]
       - name: validation_status
@@ -115,10 +96,6 @@ models:
     columns:
       - name: patient_id
         tests: [not_null, unique]
-      - name: source_row_number
-        tests: [not_null, unique]
-      - name: source_batch_id
-        tests: [not_null]
       - name: bite_date_key
         tests:
           - not_null
@@ -161,11 +138,6 @@ models:
           - relationships:
               to: ref('dim_triage')
               field: triage_key
-      - name: patient_count
-        tests:
-          - accepted_values:
-              values: [1]
-
   - name: agg_bite_triage_monthly_location_source_level
     description: 'Arrival month x location x bite source x triage; additive components retained for safe roll-up.'
     columns:

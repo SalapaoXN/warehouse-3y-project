@@ -47,7 +47,6 @@ OUTPUT_COLUMNS = [
     "province",
     "triage_level",
     "bite_position",
-    "source_row_number",
 ]
 
 COLUMN_MAP = dict(zip(SOURCE_COLUMNS, OUTPUT_COLUMNS))
@@ -113,7 +112,6 @@ def prepare(input_path: Path, seed_path: Path, manifest_path: Path) -> None:
                         target: source_row[source_name]
                         for source_name, target in COLUMN_MAP.items()
                     },
-                    "source_row_number": row_count,
                 }
 
     write_atomic_csv(seed_path, OUTPUT_COLUMNS, rows())
@@ -164,7 +162,7 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path(__file__).resolve().parents[1] / "seeds" / "raw_source_manifest.csv",
+        default=Path(__file__).resolve().parents[1] / "data" / "raw_source_manifest.csv",
     )
     args = parser.parse_args()
     prepare(args.input, args.seed, args.manifest)

@@ -4,7 +4,6 @@ config-version: 2
 profile: 'silent_sting_dw'
 
 model-paths: ['models']
-seed-paths: ['seeds']
 test-paths: ['tests']
 macro-paths: ['macros']
 analysis-paths: ['analyses']
@@ -33,14 +32,3 @@ models:
     reporting:
       +schema: ss_mart
       +materialized: view
-
-seeds:
-  silent_sting_dw:
-    +schema: ss_raw
-    +quote_columns: false
-    raw_source_manifest:
-      +column_types:
-        source_file_name: text
-        source_file_sha256: text
-        source_row_count: bigint
-        prepared_at_utc: timestamptz

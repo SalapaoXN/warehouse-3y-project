@@ -16,10 +16,8 @@ select
     fact.bite_timestamp,
     fact.arrival_timestamp,
     fact.time_since_bite_min,
-    fact.calculated_time_since_bite_min,
     fact.heart_rate_bpm,
-    fact.blood_pressure_systolic,
-    fact.patient_count
+    fact.blood_pressure_systolic
 from {{ ref('fact_bite_triage') }} as fact
 join {{ ref('dim_date') }} as bite_date
     on fact.bite_date_key = bite_date.date_key
