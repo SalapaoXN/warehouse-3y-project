@@ -32,9 +32,8 @@ docker compose exec airflow sh -c 'cat /opt/airflow/simple_auth_manager_password
 
 ### โหลดข้อมูลและสร้างคลัง
 1. ใน Airflow เปิด DAG `silent_sting_patient_dw` แล้วกด **Trigger DAG**
-2. รอทุก task เป็นสีเขียว: DAG รอ PostgreSQL → โหลด CSV เข้า `ss_raw` → รัน `dbt build` ใน container เพื่อสร้าง models และรัน tests
-   ไม่ต้องพิมพ์ `dbt build` ตรง ๆ ใน PowerShell เพราะ dbt อยู่ใน Docker; ถ้ารันเอง ใช้คำสั่งในหัวข้อทางเลือกด้านล่าง
-3. ตรวจจำนวนแถว Fact และ Mart:
+2. รอทุก task เป็นสีเขียว: DAG รอ PostgreSQL → โหลด CSV เข้า `ss_raw` → รัน dbt ใน Airflow container เพื่อสร้าง models และรัน tests; ถ้า Trigger DAG แล้วไม่ต้องสั่ง `dbt build` เอง
+3. ตรวจจำนวนแถว Fact และ Mart โดยรันคำสั่งต่อไปนี้ใน **PowerShell ที่โฟลเดอร์โปรเจกต์**:
 ```powershell
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_dw.fact_bite_triage;"'
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_mart.rpt_bite_triage_monthly_location_source_level;"'
@@ -46,8 +45,9 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
 Get-Content scripts/grant_metabase_readonly.sql | docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
-2. ในหน้าต่าง psql ตั้งรหัสแล้วออก: `\password metabase_reader` จากนั้น `\q`; แต่ละเครื่องตั้งรหัสเอง ไม่เก็บใน Git
-3. เปิด [http://localhost:23000](http://localhost:23000) สร้างบัญชีผู้ดูแล แล้วเพิ่มฐานข้อมูล PostgreSQL:
+2. หลังรันบรรทัดที่สอง prompt จะเป็น `silent_sting_dw=#`; ตรงนี้พิมพ์เฉพาะ `\password metabase_reader` แล้ว `\q` เพื่อกลับ PowerShell
+3. แต่ละเครื่องตั้งรหัสเอง ไม่เก็บใน Git
+4. เปิด [http://localhost:23000](http://localhost:23000) สร้างบัญชีผู้ดูแล แล้วเพิ่มฐานข้อมูล PostgreSQL:
    - Host `postgres`, Port `5432`, Database `silent_sting_dw`
    - User `metabase_reader`, Password ที่ตั้งใน psql
    - เลือก schema `ss_mart` และ `ss_dw`; ถ้ายังไม่เห็นให้สั่ง Sync database schema
@@ -58,6 +58,7 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
   docker compose exec airflow python /opt/airflow/project/scripts/load_raw.py
   docker compose exec dbt dbt build
   ```
+  รันจาก PowerShell ที่โฟลเดอร์โปรเจกต์ ไม่ใช่ในหน้าต่าง psql; ถ้าเห็น `silent_sting_dw=#` ให้ออกด้วย `\q` ก่อน
 - ใช้ CSV ชุดอื่น: เตรียมคอลัมน์ตามสคริปต์ แล้วรัน `python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"`; จากนั้น Trigger DAG ใหม่
 - ปิดชั่วคราว: `docker compose down` แล้วเปิดใหม่ด้วย `docker compose up -d`
 - ลบข้อมูล PostgreSQL และ Dashboard/การตั้งค่า Metabase: `docker compose down -v`
