@@ -62,7 +62,7 @@ docker compose exec dbt dbt build
 ```powershell
 python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"
 ```
-สคริปต์สร้าง `data/raw_triage_case_rows.csv` และอัปเดต manifest; loader จะใช้ CSV นี้แทนไฟล์ `.gz`
+สคริปต์สร้าง `data/raw_triage_case_rows.csv` และอัปเดต manifest พร้อม SHA-256; loader ตรวจ checksum ก่อนนำเข้า และจะใช้ CSV นี้แทนไฟล์ `.gz`
 
 ## หยุด / เริ่มใหม่
 ```powershell

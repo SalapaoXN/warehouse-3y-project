@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -52,8 +53,8 @@ def expected_row_count() -> tuple[int, dict[str, str]]:
     return count, row
 
 
-def verify_header() -> None:
-    raw_file = open_raw_csv()
+def verify_header(path: Path) -> None:
+    raw_file = open_raw_csv(path)
     with raw_file:
         header = next(csv.reader(raw_file), None)
     if header != COLUMNS:
@@ -62,15 +63,44 @@ def verify_header() -> None:
         )
 
 
-def open_raw_csv():
-    """Open the prepared CSV, falling back to the bundled gzip file."""
+def prepared_path() -> Path:
+    """Choose the local prepared CSV, falling back to the bundled gzip file."""
     if RAW_PATH.is_file():
-        return RAW_PATH.open("r", newline="", encoding="utf-8-sig")
+        return RAW_PATH
     if RAW_GZIP_PATH.is_file():
-        return gzip.open(RAW_GZIP_PATH, "rt", newline="", encoding="utf-8-sig")
+        return RAW_GZIP_PATH
     raise FileNotFoundError(
         f"Prepared CSV not found: expected {RAW_PATH} or {RAW_GZIP_PATH}"
     )
+
+
+def open_raw_csv(path: Path):
+    """Open prepared CSV content, transparently decompressing the bundled gzip."""
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt", newline="", encoding="utf-8-sig")
+    return path.open("r", newline="", encoding="utf-8-sig")
+
+
+def prepared_content_sha256(path: Path) -> str:
+    """Hash the CSV bytes, so compression does not affect the manifest checksum."""
+    digest = hashlib.sha256()
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_prepared_checksum(manifest: dict[str, str], path: Path) -> None:
+    expected = manifest.get("prepared_file_sha256", "")
+    if len(expected) != 64 or any(char not in "0123456789abcdef" for char in expected):
+        raise ValueError("Manifest prepared_file_sha256 must be a lowercase SHA-256 hex digest")
+    actual = prepared_content_sha256(path)
+    if actual != expected:
+        raise ValueError(
+            "Prepared CSV SHA-256 does not match the source manifest: "
+            f"expected {expected}, found {actual}"
+        )
 
 
 def load() -> dict[str, object]:
@@ -78,7 +108,9 @@ def load() -> dict[str, object]:
         raise FileNotFoundError(f"Source manifest not found: {MANIFEST_PATH}")
 
     expected, manifest = expected_row_count()
-    verify_header()
+    raw_path = prepared_path()
+    verify_prepared_checksum(manifest, raw_path)
+    verify_header(raw_path)
 
     connection = psycopg2.connect(
         host="postgres",
@@ -126,7 +158,7 @@ def load() -> dict[str, object]:
                 sql.Identifier(TABLE),
                 sql.SQL(", ").join(map(sql.Identifier, COLUMNS)),
             )
-            with open_raw_csv() as raw_file:
+            with open_raw_csv(raw_path) as raw_file:
                 cursor.copy_expert(copy_command.as_string(connection), raw_file)
             cursor.execute(
                 sql.SQL("SELECT count(*) FROM {}.{}").format(

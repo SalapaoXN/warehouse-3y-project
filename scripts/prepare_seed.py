@@ -89,7 +89,10 @@ def prepare(input_path: Path, seed_path: Path, manifest_path: Path) -> None:
             existing = next(csv.DictReader(manifest_path.open(encoding="utf-8")))
         except (OSError, StopIteration, csv.Error):
             existing = {}
-        if existing.get("source_file_sha256") == source_hash:
+        if (
+            existing.get("source_file_sha256") == source_hash
+            and existing.get("prepared_file_sha256") == sha256_file(seed_path)
+        ):
             print(f"Seed already matches source SHA-256 {source_hash}; no rewrite needed.")
             return
 
@@ -114,17 +117,25 @@ def prepare(input_path: Path, seed_path: Path, manifest_path: Path) -> None:
                 }
 
     write_atomic_csv(seed_path, OUTPUT_COLUMNS, rows())
+    prepared_hash = sha256_file(seed_path)
     manifest = [
         {
             "source_file_name": input_path.name,
             "source_file_sha256": source_hash,
             "source_row_count": row_count,
+            "prepared_file_sha256": prepared_hash,
             "prepared_at_utc": datetime.now(timezone.utc).isoformat(),
         }
     ]
     write_atomic_csv(
         manifest_path,
-        ["source_file_name", "source_file_sha256", "source_row_count", "prepared_at_utc"],
+        [
+            "source_file_name",
+            "source_file_sha256",
+            "source_row_count",
+            "prepared_file_sha256",
+            "prepared_at_utc",
+        ],
         manifest,
     )
     print(
@@ -135,6 +146,7 @@ def prepare(input_path: Path, seed_path: Path, manifest_path: Path) -> None:
                 "source_file_name": input_path.name,
                 "source_file_sha256": source_hash,
                 "source_row_count": row_count,
+                "prepared_file_sha256": prepared_hash,
             },
             ensure_ascii=False,
         )

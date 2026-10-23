@@ -19,6 +19,8 @@ seeds:
     columns:
       - name: source_file_sha256
         tests: [not_null, unique]
+      - name: prepared_file_sha256
+        tests: [not_null, unique]
       - name: source_row_count
         tests: [not_null]
 
