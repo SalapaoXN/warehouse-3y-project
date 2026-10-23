@@ -6,6 +6,17 @@
 - Git, Docker Desktop และ Docker Compose; ใช้ PowerShell ที่โฟลเดอร์โปรเจกต์
 - เปิด Docker Desktop ก่อนเริ่ม
 
+### โครงสร้างไฟล์และระบบ
+- `docker-compose.yaml` เปิด PostgreSQL, dbt, Airflow และ Metabase; `Dockerfile.airflow` กับ `requirements-airflow.txt` เตรียม Airflow ให้รัน DAG ได้
+- `dags/` เรียงงานรอฐานข้อมูล → โหลดข้อมูล → `dbt build`; `scripts/` เตรียม CSV, โหลดเข้า raw และให้สิทธิ์อ่าน Metabase
+- `data/` มี CSV mock แบบบีบอัด; `seeds/` เก็บ manifest, จำนวนแถว และ checksum ของไฟล์
+- `dbt_project.yml`, `profiles.yml`, `macros/` ตั้งค่า dbt, การเชื่อมต่อ และชื่อ schema
+- `models/staging/` แปลงชนิด/ตรวจข้อมูล; `models/intermediate/` แยกข้อมูลผ่านกับ quarantine
+- `models/dimensions/` เก็บมิติวัน จังหวัด สัตว์ อาการ และ triage; `models/facts/` เก็บเหตุการณ์ตาม grain หนึ่ง `patient_id` ต่อแถว
+- `models/aggregates/` สรุปยอดรายเดือน; `models/reporting/` ทำ Mart รายวัน/เดือน/ไตรมาส, CUBE และรายละเอียดพร้อมอ่านใน Metabase
+- `models/schema.yml` และ `tests/` กำหนด/ตรวจคุณภาพข้อมูล; `notebooks/` ใช้ profile CSV; `schema_postgres.sql` เป็นแบบอ้างอิง ไม่ใช่ตัวสร้างตารางหลัก
+- ลำดับข้อมูล: `ss_raw` → `ss_stg` → `ss_dw` (Fact/Dimensions) → `ss_mart` (รายงาน)
+
 ### Clone และเปิดระบบ
 ```powershell
 git clone https://github.com/SalapaoXN/warehouse-3y-project.git
