@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,7 @@ from psycopg2 import sql
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RAW_PATH = PROJECT_ROOT / "data" / "raw_triage_case_rows.csv"
+RAW_GZIP_PATH = PROJECT_ROOT / "data" / "raw_triage_case_rows.csv.gz"
 MANIFEST_PATH = PROJECT_ROOT / "seeds" / "raw_source_manifest.csv"
 SCHEMA = "ss_raw"
 TABLE = "raw_triage_case_rows"
@@ -51,7 +53,8 @@ def expected_row_count() -> tuple[int, dict[str, str]]:
 
 
 def verify_header() -> None:
-    with RAW_PATH.open("r", newline="", encoding="utf-8-sig") as raw_file:
+    raw_file = open_raw_csv()
+    with raw_file:
         header = next(csv.reader(raw_file), None)
     if header != COLUMNS:
         raise ValueError(
@@ -59,9 +62,18 @@ def verify_header() -> None:
         )
 
 
+def open_raw_csv():
+    """Open the prepared CSV, falling back to the bundled gzip file."""
+    if RAW_PATH.is_file():
+        return RAW_PATH.open("r", newline="", encoding="utf-8-sig")
+    if RAW_GZIP_PATH.is_file():
+        return gzip.open(RAW_GZIP_PATH, "rt", newline="", encoding="utf-8-sig")
+    raise FileNotFoundError(
+        f"Prepared CSV not found: expected {RAW_PATH} or {RAW_GZIP_PATH}"
+    )
+
+
 def load() -> dict[str, object]:
-    if not RAW_PATH.is_file():
-        raise FileNotFoundError(f"Prepared CSV not found: {RAW_PATH}")
     if not MANIFEST_PATH.is_file():
         raise FileNotFoundError(f"Source manifest not found: {MANIFEST_PATH}")
 
@@ -114,7 +126,7 @@ def load() -> dict[str, object]:
                 sql.Identifier(TABLE),
                 sql.SQL(", ").join(map(sql.Identifier, COLUMNS)),
             )
-            with RAW_PATH.open("r", newline="", encoding="utf-8") as raw_file:
+            with open_raw_csv() as raw_file:
                 cursor.copy_expert(copy_command.as_string(connection), raw_file)
             cursor.execute(
                 sql.SQL("SELECT count(*) FROM {}.{}").format(
