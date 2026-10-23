@@ -1,97 +1,78 @@
 # Silent Sting Data Warehouse
 
-โปรเจกต์คลังข้อมูลตัวอย่างด้วย PostgreSQL, dbt และ Airflow เพื่อวิเคราะห์แนวโน้มผู้ป่วยจากเหตุสัตว์กัดหรือต่อยตามเวลา พื้นที่ แหล่งสัตว์ อาการ และระดับคัดกรอง
+โปรเจกต์ตัวอย่างคลังข้อมูล PostgreSQL + dbt + Airflow + Metabase สำหรับวิเคราะห์ข้อมูลผู้ป่วยจากเหตุสัตว์กัด/ต่อย ใช้เพื่อการเรียนและวิเคราะห์ภาพรวมเท่านั้น ไม่ใช่เพื่อการรักษา
 
-> ใช้เพื่อการเรียนและวิเคราะห์ภาพรวม ไม่ใช่ระบบรักษาหรือช่วยตัดสินใจทางคลินิก
+## ต้องมี
+- Git, Docker Desktop และ Docker Compose
+- Python 3.10+ เฉพาะกรณีเปลี่ยนชุดข้อมูลเอง
 
-## สิ่งที่ต้องมี
+## เริ่มตั้งแต่ Clone จนดูผล
+ทำใน PowerShell โดยเปิด Docker Desktop ไว้
 
-- Git, Docker Desktop ที่เปิดใช้งานอยู่ และ Docker Compose
-- Python 3.10 ขึ้นไป เฉพาะกรณีต้องการเตรียม/เปลี่ยนไฟล์ CSV เอง
-
-## เริ่มใช้งานบน Windows (PowerShell)
-
-1. Clone repository แล้วเข้าโฟลเดอร์โปรเจกต์:
-
+1. Clone โปรเจกต์:
    ```powershell
    git clone https://github.com/SalapaoXN/warehouse-3y-project.git
    cd warehouse-3y-project
    ```
+   มีชุดข้อมูลตัวอย่าง `data/raw_triage_case_rows.csv.gz` ใน repo แล้ว ไม่ต้องหา CSV จาก Downloads
 
-   มีไฟล์ข้อมูลตัวอย่าง `data/raw_triage_case_rows.csv.gz` อยู่ใน repository แล้ว ไม่ต้องหาไฟล์ต้นฉบับหรือเตรียม CSV ก่อน
-
-2. (ไม่บังคับ) หากต้องการแทนที่ข้อมูลตัวอย่างด้วย CSV ของตนเอง:
-
+2. เปิด PostgreSQL, dbt, Airflow และ Metabase:
    ```powershell
-   python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"
-   ```
-
-   สคริปต์สร้าง `data/raw_triage_case_rows.csv` และอัปเดต manifest ใน `seeds/` โดยไม่แก้ไฟล์ต้นฉบับ; CSV ต้องมีชื่อคอลัมน์ตามที่สคริปต์กำหนด ถ้ามีไฟล์นี้ loader จะใช้แทนไฟล์ตัวอย่างที่บีบอัดไว้
-
-3. (ไม่บังคับ) กำหนดค่าฐานข้อมูลเองโดยสร้าง `.env` ที่ root ของโปรเจกต์:
-
-   ```dotenv
-   POSTGRES_DB=silent_sting_dw
-   POSTGRES_USER=dw_user
-   POSTGRES_PASSWORD=change-me
-   ```
-
-   ถ้าไม่สร้าง `.env` จะใช้ค่าทดลอง `silent_sting_dw` / `dw_user` / `dw_pass`
-   กำหนด `.env` ก่อนเริ่ม Postgres; ไฟล์นี้ถูก ignore แล้ว ห้าม commit หรือส่งรหัสผ่านให้ผู้อื่น
-
-4. สร้างและเปิดบริการ:
-
-   ```powershell
-   docker compose up -d --build postgres dbt airflow metabase
+   docker compose up -d --build
    docker compose ps
    ```
+   รอจน service แสดงสถานะพร้อมใช้งาน; ครั้งแรกอาจใช้เวลาสร้าง image
 
-   การเปิดครั้งแรกอาจใช้เวลาสร้าง image และเริ่มฐานข้อมูล
-
-## รัน pipeline ด้วย Airflow
-
-1. เปิด [http://localhost:8080](http://localhost:8080)
-2. ล็อกอินด้วย user `admin` รหัสผ่านสร้างอัตโนมัติครั้งแรก ดูได้ด้วย:
-
+3. เข้า Airflow ที่ [http://localhost:8080](http://localhost:8080) ใช้ `admin`; ดูรหัสผ่านครั้งแรกด้วย:
    ```powershell
    docker compose logs airflow
    ```
+   ใน Airflow เลือก DAG `silent_sting_patient_dw` แล้วกด Trigger DAG; รอ task ทุกตัวเป็นสีเขียว
+   DAG จะรอ PostgreSQL → โหลด CSV เข้า `ss_raw` → รัน `dbt build` เพื่อสร้างตารางและทดสอบข้อมูล
 
-3. เลือก DAG `silent_sting_patient_dw` แล้วกด Trigger DAG
-4. DAG ทำงานตามลำดับ: รอ PostgreSQL → โหลด CSV เข้า raw → `dbt build`
-5. ดูสถานะและ log ของแต่ละ task ในหน้า Airflow; DAG นี้ไม่ได้ตั้งเวลารันอัตโนมัติ
+4. ตรวจว่ามีตาราง Fact และ Mart:
+   ```powershell
+   docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt ss_dw.*"'
+   docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt ss_mart.*"'
+   docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_dw.fact_bite_triage;"'
+   docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_mart.rpt_bite_triage_monthly_location_source_level;"'
+   ```
 
-ถ้าต้องการสั่งเองโดยไม่กด DAG (ต้องเปิดบริการตามขั้นตอนก่อน):
+5. เตรียมบัญชีอ่านข้อมูลให้ Metabase (ทำหลัง DAG สำเร็จ):
+   ```powershell
+   Get-Content scripts/grant_metabase_readonly.sql | docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+   docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+   ```
+   ในหน้าต่าง `psql` รัน `\password metabase_reader` แล้วตั้งรหัสผ่าน จากนั้นรัน `\q` เพื่อออก
 
+6. ตั้งค่า Metabase ที่ [http://localhost:23000](http://localhost:23000): สร้างบัญชีผู้ดูแล แล้วเพิ่ม PostgreSQL โดยใช้ host `postgres`, port `5432`, database `silent_sting_dw`, user `metabase_reader` และรหัสผ่านที่ตั้งไว้
+
+7. เปิด schema `ss_mart` เพื่อใช้รายงานและทำ Dashboard; เปิด `ss_dw` เมื่อต้องการดู Star Schema โดยตรง คู่มือสร้างกราฟอยู่ที่ [docs/metabase.md](docs/metabase.md)
+
+## รัน Pipeline โดยไม่กด DAG
+ใช้แทนขั้นตอน Trigger ใน Airflow ได้ หลัง `docker compose up` สำเร็จ:
 ```powershell
 docker compose exec airflow python /opt/airflow/project/scripts/load_raw.py
 docker compose exec dbt dbt build
 ```
+คำสั่ง `dbt build` สร้าง models และรัน tests; ต้องสำเร็จก่อนใช้ข้อมูลใน Metabase
 
-`dbt build` สร้าง models และรัน tests จาก `models/schema.yml` กับ `tests/`
+## ใช้ CSV ชุดอื่น (ไม่บังคับ)
+เตรียมไฟล์ที่มีคอลัมน์ตามที่สคริปต์กำหนด แล้วรัน:
+```powershell
+python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"
+```
+สคริปต์สร้าง `data/raw_triage_case_rows.csv` และอัปเดต manifest; loader จะใช้ CSV นี้แทนไฟล์ `.gz`
 
-## ดูผลลัพธ์ใน Metabase
-
-ตาราง PostgreSQL อยู่ใน `ss_raw` (ต้นทาง), `ss_stg` (staging), `ss_dw` (dimensions/fact) และ `ss_mart` (สรุป/รายงาน)
-
-หลัง DAG สำเร็จ เปิด [http://localhost:23000](http://localhost:23000) แล้วเชื่อม dashboard กับ `ss_mart`
-ทำตาม [คู่มือตั้งค่า Metabase และสร้าง dashboard](docs/metabase.md); ใช้ user อ่านอย่างเดียว `metabase_reader`
-ถ้าต้องการดูข้อมูลระดับแถวโดยไม่เห็น FK เป็นตัวเลข ให้เปิด `ss_mart.rpt_bite_triage_patient_detail`
-ซึ่ง dbt join ชื่อมิติไว้ให้แล้ว และใช้ `patient_count` สำหรับนับจำนวนแถว/ผู้ป่วย
-
-## หยุดและเริ่มใหม่
-
+## หยุด / เริ่มใหม่
 ```powershell
 docker compose down
 docker compose up -d
 ```
-
-`docker compose down` หยุด container แต่เก็บข้อมูลฐานข้อมูลไว้
-การลบ volume ด้วย `docker compose down -v` จะลบฐานข้อมูลทั้งหมด
+`down` เก็บข้อมูลไว้; `docker compose down -v` ลบข้อมูล PostgreSQL และการตั้งค่า/dashboard Metabase ทั้งหมด
 
 ## ข้อควรทราบ
-
-- Grain ของ fact คือหนึ่งแถวต่อ `patient_id` ที่ไม่ซ้ำใน snapshot; หาก ID ซ้ำ tests จะไม่ผ่านและต้องทบทวน grain
-- ไฟล์ข้อมูลตัวอย่างใน repository มี `patient_id` และข้อมูลสุขภาพระดับแถว; อย่าแทนที่หรือเผยแพร่ด้วยข้อมูลผู้ป่วยจริงหรือข้อมูลที่ไม่ได้รับอนุญาตให้เผยแพร่สาธารณะ
-- ข้อมูลไม่มีตัวหารประชากรและอาจมีวันที่ในอนาคต จึงใช้คำนวณอัตราเสี่ยงหรืออุบัติการณ์ไม่ได้โดยตรง
-- Airflow และรหัสผ่านเริ่มต้นใน Compose เหมาะกับการทดลองในเครื่องเท่านั้น
+- Grain ของ Fact คือหนึ่งแถวต่อ `patient_id`; dbt tests ตรวจ ID ซ้ำและความสอดคล้องของยอด
+- ชุดข้อมูลมี `patient_id` และข้อมูลสุขภาพระดับแถว; อย่าแทนที่หรือเผยแพร่ด้วยข้อมูลผู้ป่วยจริง/ข้อมูลที่ไม่มีสิทธิ์เผยแพร่
+- ไม่มีตัวหารประชากรและอาจมีวันที่ในอนาคต จึงใช้คำนวณอัตราเสี่ยงหรืออุบัติการณ์ไม่ได้โดยตรง
+- Airflow และรหัสผ่านเริ่มต้นเหมาะสำหรับการทดลองในเครื่องเท่านั้น
