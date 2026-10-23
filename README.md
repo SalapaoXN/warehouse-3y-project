@@ -49,6 +49,18 @@
 
 7. เปิด schema `ss_mart` เพื่อใช้รายงานและทำ Dashboard; เปิด `ss_dw` เมื่อต้องการดู Star Schema โดยตรง คู่มือสร้างกราฟอยู่ที่ [docs/metabase.md](docs/metabase.md)
 
+## เลือก Mart ตามคำถาม
+| อยากดู | Mart ใน `ss_mart` | ตั้งค่าใน Metabase |
+| --- | --- | --- |
+| แนวโน้มรายเดือนเทียบชนิดสัตว์ | `rpt_bite_triage_monthly_location_source_level` | Line: X=`arrival_month`, เส้น=`bite_source` |
+| จังหวัดที่มีจำนวนสูง | Mart รายเดือน | Bar: แกน=`location` |
+| แนวโน้มรายวัน | `rpt_bite_triage_daily_location_source_level` | Line: X=`arrival_date` |
+| เปรียบเทียบรายไตรมาส | `rpt_bite_triage_quarterly_location` | Line: X=`arrival_quarter`, เส้น=`location` |
+| ยอดรวมและ subtotal | `rpt_bite_triage_location_source_level_cube` | Table: `location`, `bite_source`, `triage_level`, `patient_count`; `is_all_*` บอกแถว subtotal |
+| ดูรายละเอียดแถว | `rpt_bite_triage_patient_detail` | Table; กรองวัน จังหวัด สัตว์ อาการ หรือระดับคัดกรอง; ไม่มี `patient_id` |
+
+ใช้ **Sum of `patient_count`** ไม่ใช่ Count of rows; อย่าเฉลี่ยค่า `avg_*` หรือ `*_share` ซ้ำข้ามกลุ่มโดยตรง เดือนที่ไม่มีแถวจะไม่แสดงเป็นศูนย์ คู่มือกดสร้างอยู่ใน [docs/metabase.md](docs/metabase.md)
+
 ## รัน Pipeline โดยไม่กด DAG
 ใช้แทนขั้นตอน Trigger ใน Airflow ได้ หลัง `docker compose up` สำเร็จ:
 ```powershell
