@@ -7,8 +7,8 @@
 - เปิด Docker Desktop ก่อนเริ่ม
 
 ### โครงสร้างไฟล์และระบบ
-- `docker-compose.yaml` เปิด PostgreSQL, dbt, Airflow และ Metabase; `Dockerfile.airflow` กับ `requirements-airflow.txt` เตรียม Airflow ให้รัน DAG ได้
-- `dags/` เรียงงานรอฐานข้อมูล → โหลดข้อมูล → `dbt build`; `scripts/` เตรียม CSV, โหลดเข้า raw และให้สิทธิ์อ่าน Metabase
+- `docker-compose.yaml` เปิด PostgreSQL, dbt, Airflow, Metabase และตัวสร้างบัญชี Metabase; `Dockerfile.airflow` กับ `requirements-airflow.txt` เตรียม Airflow ให้รัน DAG ได้
+- `dags/` เรียงงานรอฐานข้อมูล → โหลดข้อมูล → `dbt build`; `scripts/` เตรียม CSV, โหลดเข้า raw, สร้างบัญชีผู้ดูแล Metabase และให้สิทธิ์อ่านฐานข้อมูล
 - `data/` มี CSV mock แบบบีบอัด; `seeds/` เก็บ manifest, จำนวนแถว และ checksum ของไฟล์
 - `dbt_project.yml`, `profiles.yml`, `macros/` ตั้งค่า dbt, การเชื่อมต่อ และชื่อ schema
 - `models/staging/` แปลงชนิด/ตรวจข้อมูล; `models/intermediate/` แยกข้อมูลผ่านกับ quarantine
@@ -41,15 +41,21 @@ docker compose exec -T postgres psql -U dw_user -d silent_sting_dw -c "SELECT CO
 ```
 คำสั่งใช้ค่าตั้งต้นใน `docker-compose.yaml` (`dw_user` / `silent_sting_dw`); ถ้าแก้ค่าใน `.env` ให้ใช้ค่าที่ตั้งไว้แทน ถ้าอยู่ใน `psql` แล้ว ให้พิมพ์ `\q` เพื่อกลับ PowerShell ก่อน; คำสั่ง `\dt` ใช้พิมพ์ในหน้าจอ `psql` โดยตรง ไม่ต้องใส่ใน `-c`.
 
-### เชื่อม Metabase กับ PostgreSQL
-1. สร้างบัญชีอ่านสำหรับ Metabase หลัง DAG สำเร็จ:
+### เข้า Metabase และเชื่อม PostgreSQL
+1. รอข้อความ `Created the first Metabase admin: admin@example.com` จากคำสั่ง `docker compose logs metabase_bootstrap` แล้วเปิด [http://localhost:23000](http://localhost:23000) เพื่อเข้าสู่ระบบ:
+   - Email: `admin@example.com`
+   - Password: `SilentStingDemo2026!`
+   - ชื่อผู้ใช้: Admin User
+   - อีเมลนี้เป็นชื่อบัญชีสำหรับล็อกอิน ไม่มี inbox จริง; ยังไม่ต้องตั้ง SMTP
+   - บัญชีนี้สร้างอัตโนมัติเฉพาะ Metabase ที่ยังไม่เคยตั้งค่า; ถ้ามี volume เดิม ระบบจะไม่เปลี่ยนบัญชีเดิม
+   - รหัสนี้เป็นรหัสสาธารณะสำหรับเดโมในเครื่องเท่านั้น; อย่านำไปใช้กับระบบที่เปิดสู่อินเทอร์เน็ต
+2. สร้างบัญชีอ่าน PostgreSQL สำหรับให้ Metabase ดูข้อมูล หลัง DAG สำเร็จ:
 ```powershell
 Get-Content scripts/grant_metabase_readonly.sql | docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
-2. หลังรันบรรทัดที่สอง prompt จะเป็น `silent_sting_dw=#`; ตรงนี้พิมพ์เฉพาะ `\password metabase_reader` แล้ว `\q` เพื่อกลับ PowerShell
-3. แต่ละเครื่องตั้งรหัสเอง ไม่เก็บใน Git
-4. เปิด [http://localhost:23000](http://localhost:23000) สร้างบัญชีผู้ดูแล แล้วเพิ่มฐานข้อมูล PostgreSQL:
+3. หลังรันบรรทัดที่สอง prompt จะเป็น `silent_sting_dw=#`; ตรงนี้พิมพ์เฉพาะ `\password metabase_reader` แล้ว `\q` เพื่อกลับ PowerShell
+4. ใน Metabase เพิ่มฐานข้อมูล PostgreSQL:
    - Host `postgres`, Port `5432`, Database `silent_sting_dw`
    - User `metabase_reader`, Password ที่ตั้งใน psql
    - เลือก schema `ss_mart` และ `ss_dw`; ถ้ายังไม่เห็นให้สั่ง Sync database schema
