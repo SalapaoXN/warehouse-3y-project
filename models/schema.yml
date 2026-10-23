@@ -181,5 +181,8 @@ models:
   - name: rpt_bite_triage_daily_location_source_level
     description: 'Daily arrival detail for drill-down.'
 
+  - name: rpt_bite_triage_patient_detail
+    description: 'One row per patient-grain fact row with readable date, province, animal source, bite position, symptoms, and triage values for Metabase. Technical IDs and source lineage fields are omitted.'
+
   - name: rpt_bite_triage_location_source_level_cube
     description: 'CUBE subtotals across location, bite source, and triage level.'

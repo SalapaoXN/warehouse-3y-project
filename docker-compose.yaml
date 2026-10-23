@@ -57,5 +57,19 @@ services:
       postgres:
         condition: service_healthy
 
+  metabase:
+    image: metabase/metabase:v0.64.1
+    ports:
+      - '127.0.0.1:23000:3000'
+    environment:
+      MB_DB_FILE: /metabase.db/metabase.db
+      JAVA_TIMEZONE: Asia/Bangkok
+    volumes:
+      - metabase_data:/metabase.db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   silent_sting_pgdata:
+  metabase_data:
