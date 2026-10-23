@@ -32,7 +32,8 @@ docker compose exec airflow sh -c 'cat /opt/airflow/simple_auth_manager_password
 
 ### โหลดข้อมูลและสร้างคลัง
 1. ใน Airflow เปิด DAG `silent_sting_patient_dw` แล้วกด **Trigger DAG**
-2. รอทุก task เป็นสีเขียว: DAG รอ PostgreSQL → โหลด CSV เข้า `ss_raw` → สั่ง `dbt build` เพื่อสร้าง models และรัน tests
+2. รอทุก task เป็นสีเขียว: DAG รอ PostgreSQL → โหลด CSV เข้า `ss_raw` → รัน `dbt build` ใน container เพื่อสร้าง models และรัน tests
+   ไม่ต้องพิมพ์ `dbt build` ตรง ๆ ใน PowerShell เพราะ dbt อยู่ใน Docker; ถ้ารันเอง ใช้คำสั่งในหัวข้อทางเลือกด้านล่าง
 3. ตรวจจำนวนแถว Fact และ Mart:
 ```powershell
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_dw.fact_bite_triage;"'
@@ -52,7 +53,11 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
    - เลือก schema `ss_mart` และ `ss_dw`; ถ้ายังไม่เห็นให้สั่ง Sync database schema
 
 ### ทางเลือกและปิดระบบ
-- ไม่ใช้ Airflow: `docker compose exec airflow python /opt/airflow/project/scripts/load_raw.py` แล้ว `docker compose exec dbt dbt build`
+- ไม่ใช้ Airflow (หลังเปิด containers แล้ว) ให้รัน:
+  ```powershell
+  docker compose exec airflow python /opt/airflow/project/scripts/load_raw.py
+  docker compose exec dbt dbt build
+  ```
 - ใช้ CSV ชุดอื่น: เตรียมคอลัมน์ตามสคริปต์ แล้วรัน `python scripts/prepare_seed.py --input "C:\Users\ชื่อผู้ใช้\Downloads\silent_sting_triage_data_enriched.csv"`; จากนั้น Trigger DAG ใหม่
 - ปิดชั่วคราว: `docker compose down` แล้วเปิดใหม่ด้วย `docker compose up -d`
 - ลบข้อมูล PostgreSQL และ Dashboard/การตั้งค่า Metabase: `docker compose down -v`
