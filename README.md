@@ -33,11 +33,13 @@ docker compose exec airflow sh -c 'cat /opt/airflow/simple_auth_manager_password
 ### โหลดข้อมูลและสร้างคลัง
 1. ใน Airflow เปิด DAG `silent_sting_patient_dw` แล้วกด **Trigger DAG**
 2. รอทุก task เป็นสีเขียว: DAG รอ PostgreSQL → โหลด CSV เข้า `ss_raw` → รัน dbt ใน Airflow container เพื่อสร้าง models และรัน tests; ถ้า Trigger DAG แล้วไม่ต้องสั่ง `dbt build` เอง
-3. ตรวจจำนวนแถว Fact และ Mart โดยรันคำสั่งต่อไปนี้ใน **PowerShell ที่โฟลเดอร์โปรเจกต์**:
+3. ตรวจว่ามีตารางและข้อมูลแล้ว โดยรันคำสั่งต่อไปนี้ใน **PowerShell ที่โฟลเดอร์โปรเจกต์** (อย่ารันในหน้าที่ขึ้นต้นด้วย `silent_sting_dw=#`):
 ```powershell
-docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_dw.fact_bite_triage;"'
-docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM ss_mart.rpt_bite_triage_monthly_location_source_level;"'
+docker compose exec -T postgres psql -U dw_user -d silent_sting_dw -c "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema IN ('ss_dw', 'ss_mart') ORDER BY table_schema, table_name;"
+docker compose exec -T postgres psql -U dw_user -d silent_sting_dw -c "SELECT COUNT(*) FROM ss_dw.fact_bite_triage;"
+docker compose exec -T postgres psql -U dw_user -d silent_sting_dw -c "SELECT COUNT(*) FROM ss_mart.rpt_bite_triage_monthly_location_source_level;"
 ```
+คำสั่งใช้ค่าตั้งต้นใน `docker-compose.yaml` (`dw_user` / `silent_sting_dw`); ถ้าแก้ค่าใน `.env` ให้ใช้ค่าที่ตั้งไว้แทน ถ้าอยู่ใน `psql` แล้ว ให้พิมพ์ `\q` เพื่อกลับ PowerShell ก่อน; คำสั่ง `\dt` ใช้พิมพ์ในหน้าจอ `psql` โดยตรง ไม่ต้องใส่ใน `-c`.
 
 ### เชื่อม Metabase กับ PostgreSQL
 1. สร้างบัญชีอ่านสำหรับ Metabase หลัง DAG สำเร็จ:
