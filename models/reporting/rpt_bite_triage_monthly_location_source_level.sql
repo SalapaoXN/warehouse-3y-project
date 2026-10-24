@@ -2,8 +2,7 @@ select
     a.arrival_month,
     l.province_name as location,
     s.bite_source_name as bite_source,
-    t.triage_scale_code,
-    t.triage_level_label,
+    t.triage_level,
     a.patient_count,
     a.source_delay_minutes_sum
         / nullif(a.source_delay_observation_count, 0) as avg_source_delay_min,

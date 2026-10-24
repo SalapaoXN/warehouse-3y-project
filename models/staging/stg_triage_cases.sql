@@ -31,6 +31,8 @@ typed as (
             then heart_rate_value::numeric(12, 4) end as heart_rate_bpm,
         case when pg_input_is_valid(systolic_bp_value, 'numeric')
             then systolic_bp_value::numeric(12, 4) end as systolic_bp_mmhg,
+        case when pg_input_is_valid(triage_level_source_value, 'smallint')
+            then triage_level_source_value::smallint end as triage_level_number,
         case when bite_timestamp_value is not null
                   and pg_input_is_valid(bite_timestamp_value, 'timestamp without time zone')
             then bite_timestamp_value::timestamp without time zone end as bite_at,
@@ -63,6 +65,8 @@ validated as (
                 then 'invalid_heart_rate' end,
             case when systolic_bp_value is not null and systolic_bp_mmhg is null
                 then 'invalid_systolic_bp' end,
+            case when triage_level_source_value is not null and triage_level_number is null
+                then 'invalid_triage_level' end,
             case when paralysis_value is not null and paralysis_value not in ('0', '1')
                 then 'invalid_paralysis_flag' end,
             case when coagulation_value is not null and coagulation_value not in ('0', '1')
@@ -85,7 +89,7 @@ select
     bite_at,
     arrived_at,
     province_source_value as province_name_raw,
-    triage_level_source_value as triage_level_code,
+    triage_level_number,
     bite_position_source_value as bite_position_code,
     case when validation_errors is null then 'accepted' else 'quarantined' end
         as validation_status,

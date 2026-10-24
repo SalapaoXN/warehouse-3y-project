@@ -38,15 +38,20 @@ join {{ ref('dim_date') }} as bite_date
 join {{ ref('dim_date') }} as arrival_date
     on a.arrived_at::date = arrival_date.full_date
 join {{ ref('dim_location') }} as location
-    on coalesce(a.province_name_raw, '__MISSING__') = location.province_code
+    on coalesce(a.province_name_raw, '__MISSING__') =
+       case when location.province_name = 'Missing source value' then '__MISSING__'
+            else location.province_name end
 join {{ ref('dim_bite_source') }} as bite_source
-    on coalesce(a.bite_source_code, '__MISSING__') = bite_source.source_code
+    on coalesce(a.bite_source_code, '__MISSING__') =
+       case when bite_source.bite_source_name = 'Missing source value' then '__MISSING__'
+            else bite_source.bite_source_name end
 join {{ ref('dim_bite_position') }} as bite_position
-    on coalesce(a.bite_position_code, '__MISSING__') = bite_position.position_code
+    on coalesce(a.bite_position_code, '__MISSING__') =
+       case when bite_position.bite_position_name = 'Missing source value' then '__MISSING__'
+            else bite_position.bite_position_name end
 join {{ ref('dim_symptom_profile') }} as symptom_profile
     on a.swelling_code is not distinct from symptom_profile.local_swelling
    and a.muscle_paralysis_present is not distinct from symptom_profile.muscle_paralysis_present
    and a.blood_coagulation_failure is not distinct from symptom_profile.blood_coagulation_failure
 join {{ ref('dim_triage') }} as triage
-    on triage.triage_scale_code = 'UNSPECIFIED'
-   and coalesce(a.triage_level_code, '__MISSING__') = triage.triage_level
+    on a.triage_level_number is not distinct from triage.triage_level

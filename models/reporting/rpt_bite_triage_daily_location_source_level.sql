@@ -2,8 +2,7 @@ select
     arrival_date.full_date as arrival_date,
     l.province_name as location,
     s.bite_source_name as bite_source,
-    t.triage_scale_code,
-    t.triage_level_label,
+    t.triage_level,
     count(*)::bigint as patient_count,
     avg(f.time_since_bite_min) as avg_source_delay_min,
     avg(f.heart_rate_bpm) as avg_heart_rate_bpm,
@@ -25,5 +24,4 @@ group by
     arrival_date.full_date,
     l.province_name,
     s.bite_source_name,
-    t.triage_scale_code,
-    t.triage_level_label
+    t.triage_level

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1880" height="1060" viewBox="0 0 1880 1060" role="img" aria-labelledby="title desc">
+<title id="title">Silent Sting Star Schema ERD</title>
+<desc id="desc">One row per patient id. Fact Bite Triage connects to date, location, animal source, bite position, symptom profile, and numeric triage dimensions.</desc>
+<defs>
+  <filter id="shadow" x="-12%" y="-12%" width="124%" height="130%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#20364a" flood-opacity=".10"/></filter>
+  <style>
+    text { font-family: Arial, "Segoe UI", sans-serif; fill: #273849; }
+    .title { font-size: 32px; font-weight: 700; fill: #1b3650; }
+    .subtitle { font-size: 17px; fill: #647487; }
+    .legend { font-size: 14px; font-weight: 600; fill: #506477; }
+    .table-head { font-size: 17px; font-weight: 700; fill: #ffffff; }
+    .field { font-size: 15px; }
+    .type { font-size: 13px; fill: #758293; }
+    .key-badge { font-size: 10px; font-weight: 700; text-anchor: middle; }
+    .rel-label { font-size: 11px; font-weight: 600; fill: #728094; }
+    .card { fill: #ffffff; stroke: #d8e0e8; stroke-width: 1.3; }
+    .rel { fill: none; stroke: #a5afba; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</defs>
+<rect width="100%" height="100%" fill="#fbfcfe"/>
+<text x="60" y="59" class="title">Silent Sting | Star Schema</text>
+<text x="60" y="88" class="subtitle">Grain: one row per patient_id in the current snapshot</text>
+<rect x="60" y="111" width="1760" height="42" rx="9" fill="#f0f4f8"/>
+<rect x="78" y="121" width="34" height="22" rx="5" fill="#e7f0f8" stroke="#c5d7e7"/>
+<text x="95" y="136" class="key-badge" fill="#326b97">PK</text><text x="121" y="136" class="legend">Primary key</text>
+<rect x="244" y="121" width="34" height="22" rx="5" fill="#e6f3f1" stroke="#c3dfdb"/>
+<text x="261" y="136" class="key-badge" fill="#287d76">FK</text><text x="287" y="136" class="legend">Foreign key</text>
+<path d="M425 132 H477" class="rel"/><path d="M425 124 V140" class="rel"/>
+<path d="M463 132 L477 124 M463 132 H477 M463 132 L477 140" class="rel"/>
+<text x="489" y="136" class="legend">one row to many rows</text>
+
+<!-- Relationship routes are behind the table cards. -->
+<!-- Dim_Date is used in two roles: bite date and arrival date. -->
+<path class="rel" d="M440 244 H500 V344 H585"/>
+<path class="rel" d="M440 252 H480 V376 H585"/>
+<text x="495" y="337" class="rel-label">bite date</text><text x="495" y="370" class="rel-label">arrival date</text>
+<!-- Left dimensions -->
+<path class="rel" d="M440 680 H465 V408 H585"/>
+<path class="rel" d="M440 900 H515 V440 H585"/>
+<!-- Right dimensions -->
+<path class="rel" d="M1230 472 H1300 V250 H1400"/>
+<path class="rel" d="M1230 504 H1340 V510 H1400"/>
+<path class="rel" d="M1230 536 H1270 V795 H1400"/>
+
+<g aria-label="dim_date">
+<rect x="60" y="190" width="380" height="365" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M68 190 H432 Q440 190 440 198 V234 H60 V198 Q60 190 68 190 Z" fill="#376f98"/>
+<rect x="73" y="205" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="94" y="219" class="table-head">dim_date</text>
+<rect x="72" y="240" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="85.5" y="252.5" class="key-badge" fill="#326b97">PK</text>
+<text x="108" y="253.5" class="field" font-weight="600">date_key</text>
+<text x="427" y="253" text-anchor="end" class="type">bigint</text>
+<rect x="61" y="263" width="378" height="29" fill="#f7f9fb"/>
+<line x1="61" y1="263" x2="439" y2="263" stroke="#edf1f5"/>
+<text x="74" y="282.5" class="field" font-weight="400">full_date</text>
+<text x="427" y="282" text-anchor="end" class="type">date</text>
+<line x1="61" y1="292" x2="439" y2="292" stroke="#edf1f5"/>
+<text x="74" y="311.5" class="field" font-weight="400">day_of_week</text>
+<text x="427" y="311" text-anchor="end" class="type">text</text>
+<rect x="61" y="321" width="378" height="29" fill="#f7f9fb"/>
+<line x1="61" y1="321" x2="439" y2="321" stroke="#edf1f5"/>
+<text x="74" y="340.5" class="field" font-weight="400">calendar_year</text>
+<text x="427" y="340" text-anchor="end" class="type">smallint</text>
+<line x1="61" y1="350" x2="439" y2="350" stroke="#edf1f5"/>
+<text x="74" y="369.5" class="field" font-weight="400">calendar_quarter</text>
+<text x="427" y="369" text-anchor="end" class="type">smallint</text>
+<rect x="61" y="379" width="378" height="29" fill="#f7f9fb"/>
+<line x1="61" y1="379" x2="439" y2="379" stroke="#edf1f5"/>
+<text x="74" y="398.5" class="field" font-weight="400">calendar_month</text>
+<text x="427" y="398" text-anchor="end" class="type">smallint</text>
+<line x1="61" y1="408" x2="439" y2="408" stroke="#edf1f5"/>
+<text x="74" y="427.5" class="field" font-weight="400">month_name</text>
+<text x="427" y="427" text-anchor="end" class="type">text</text>
+<rect x="61" y="437" width="378" height="29" fill="#f7f9fb"/>
+<line x1="61" y1="437" x2="439" y2="437" stroke="#edf1f5"/>
+<text x="74" y="456.5" class="field" font-weight="400">day_of_month</text>
+<text x="427" y="456" text-anchor="end" class="type">smallint</text>
+<line x1="61" y1="466" x2="439" y2="466" stroke="#edf1f5"/>
+<text x="74" y="485.5" class="field" font-weight="400">iso_week</text>
+<text x="427" y="485" text-anchor="end" class="type">smallint</text>
+<rect x="61" y="495" width="378" height="29" fill="#f7f9fb"/>
+<line x1="61" y1="495" x2="439" y2="495" stroke="#edf1f5"/>
+<text x="74" y="514.5" class="field" font-weight="400">iso_day_of_week</text>
+<text x="427" y="514" text-anchor="end" class="type">smallint</text>
+<line x1="61" y1="524" x2="439" y2="524" stroke="#edf1f5"/>
+<text x="74" y="543.5" class="field" font-weight="400">is_weekend</text>
+<text x="427" y="543" text-anchor="end" class="type">boolean</text>
+</g>
+<g aria-label="fact_bite_triage">
+<rect x="585" y="250" width="645" height="526" rx="8" class="card" stroke="#b7c7d6" filter="url(#shadow)"/>
+<path d="M593 250 H1222 Q1230 250 1230 258 V294 H585 V258 Q585 250 593 250 Z" fill="#356f9e"/>
+<rect x="598" y="265" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="619" y="279" class="table-head">fact_bite_triage</text>
+<rect x="597" y="300" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="610.5" y="312.5" class="key-badge" fill="#326b97">PK</text>
+<text x="633" y="313.5" class="field" font-weight="600">patient_id</text>
+<text x="1217" y="313" text-anchor="end" class="type">text</text>
+<rect x="586" y="326" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="326" x2="1229" y2="326" stroke="#edf1f5"/>
+<rect x="597" y="332" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="344.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="345.5" class="field" font-weight="400">bite_date_key</text>
+<text x="1217" y="345" text-anchor="end" class="type">bigint</text>
+<line x1="586" y1="358" x2="1229" y2="358" stroke="#edf1f5"/>
+<rect x="597" y="364" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="376.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="377.5" class="field" font-weight="400">arrival_date_key</text>
+<text x="1217" y="377" text-anchor="end" class="type">bigint</text>
+<rect x="586" y="390" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="390" x2="1229" y2="390" stroke="#edf1f5"/>
+<rect x="597" y="396" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="408.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="409.5" class="field" font-weight="400">location_key</text>
+<text x="1217" y="409" text-anchor="end" class="type">bigint</text>
+<line x1="586" y1="422" x2="1229" y2="422" stroke="#edf1f5"/>
+<rect x="597" y="428" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="440.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="441.5" class="field" font-weight="400">bite_source_key</text>
+<text x="1217" y="441" text-anchor="end" class="type">bigint</text>
+<rect x="586" y="454" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="454" x2="1229" y2="454" stroke="#edf1f5"/>
+<rect x="597" y="460" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="472.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="473.5" class="field" font-weight="400">bite_position_key</text>
+<text x="1217" y="473" text-anchor="end" class="type">bigint</text>
+<line x1="586" y1="486" x2="1229" y2="486" stroke="#edf1f5"/>
+<rect x="597" y="492" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="504.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="505.5" class="field" font-weight="400">symptom_profile_key</text>
+<text x="1217" y="505" text-anchor="end" class="type">bigint</text>
+<rect x="586" y="518" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="518" x2="1229" y2="518" stroke="#edf1f5"/>
+<rect x="597" y="524" width="27" height="17" rx="4" fill="#e6f3f1"/>
+<text x="610.5" y="536.5" class="key-badge" fill="#287d76">FK</text>
+<text x="633" y="537.5" class="field" font-weight="400">triage_key</text>
+<text x="1217" y="537" text-anchor="end" class="type">bigint</text>
+<line x1="586" y1="550" x2="1229" y2="550" stroke="#edf1f5"/>
+<text x="599" y="569.5" class="field" font-weight="400">age</text>
+<text x="1217" y="569" text-anchor="end" class="type">integer</text>
+<rect x="586" y="582" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="582" x2="1229" y2="582" stroke="#edf1f5"/>
+<text x="599" y="601.5" class="field" font-weight="400">gender</text>
+<text x="1217" y="601" text-anchor="end" class="type">text</text>
+<line x1="586" y1="614" x2="1229" y2="614" stroke="#edf1f5"/>
+<text x="599" y="633.5" class="field" font-weight="400">bite_timestamp</text>
+<text x="1217" y="633" text-anchor="end" class="type">timestamp</text>
+<rect x="586" y="646" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="646" x2="1229" y2="646" stroke="#edf1f5"/>
+<text x="599" y="665.5" class="field" font-weight="400">arrival_timestamp</text>
+<text x="1217" y="665" text-anchor="end" class="type">timestamp</text>
+<line x1="586" y1="678" x2="1229" y2="678" stroke="#edf1f5"/>
+<text x="599" y="697.5" class="field" font-weight="400">time_since_bite_min</text>
+<text x="1217" y="697" text-anchor="end" class="type">numeric</text>
+<rect x="586" y="710" width="643" height="32" fill="#f7f9fb"/>
+<line x1="586" y1="710" x2="1229" y2="710" stroke="#edf1f5"/>
+<text x="599" y="729.5" class="field" font-weight="400">heart_rate_bpm</text>
+<text x="1217" y="729" text-anchor="end" class="type">numeric</text>
+<line x1="586" y1="742" x2="1229" y2="742" stroke="#edf1f5"/>
+<text x="599" y="761.5" class="field" font-weight="400">blood_pressure_systolic</text>
+<text x="1217" y="761" text-anchor="end" class="type">numeric</text>
+</g>
+<g aria-label="dim_location">
+<rect x="60" y="622" width="380" height="110" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M68 622 H432 Q440 622 440 630 V666 H60 V630 Q60 622 68 622 Z" fill="#376f98"/>
+<rect x="73" y="637" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="94" y="651" class="table-head">dim_location</text>
+<rect x="72" y="672" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="85.5" y="684.5" class="key-badge" fill="#326b97">PK</text>
+<text x="108" y="685.5" class="field" font-weight="600">location_key</text>
+<text x="427" y="685" text-anchor="end" class="type">bigint</text>
+<rect x="61" y="698" width="378" height="32" fill="#f7f9fb"/>
+<line x1="61" y1="698" x2="439" y2="698" stroke="#edf1f5"/>
+<text x="74" y="717.5" class="field" font-weight="400">province_name</text>
+<text x="427" y="717" text-anchor="end" class="type">text</text>
+</g>
+<g aria-label="dim_bite_source">
+<rect x="60" y="842" width="380" height="110" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M68 842 H432 Q440 842 440 850 V886 H60 V850 Q60 842 68 842 Z" fill="#376f98"/>
+<rect x="73" y="857" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="94" y="871" class="table-head">dim_bite_source</text>
+<rect x="72" y="892" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="85.5" y="904.5" class="key-badge" fill="#326b97">PK</text>
+<text x="108" y="905.5" class="field" font-weight="600">bite_source_key</text>
+<text x="427" y="905" text-anchor="end" class="type">bigint</text>
+<rect x="61" y="918" width="378" height="32" fill="#f7f9fb"/>
+<line x1="61" y1="918" x2="439" y2="918" stroke="#edf1f5"/>
+<text x="74" y="937.5" class="field" font-weight="400">bite_source_name</text>
+<text x="427" y="937" text-anchor="end" class="type">text</text>
+</g>
+<g aria-label="dim_bite_position">
+<rect x="1400" y="192" width="420" height="110" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M1408 192 H1812 Q1820 192 1820 200 V236 H1400 V200 Q1400 192 1408 192 Z" fill="#376f98"/>
+<rect x="1413" y="207" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="1434" y="221" class="table-head">dim_bite_position</text>
+<rect x="1412" y="242" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="1425.5" y="254.5" class="key-badge" fill="#326b97">PK</text>
+<text x="1448" y="255.5" class="field" font-weight="600">bite_position_key</text>
+<text x="1807" y="255" text-anchor="end" class="type">bigint</text>
+<rect x="1401" y="268" width="418" height="32" fill="#f7f9fb"/>
+<line x1="1401" y1="268" x2="1819" y2="268" stroke="#edf1f5"/>
+<text x="1414" y="287.5" class="field" font-weight="400">bite_position_name</text>
+<text x="1807" y="287" text-anchor="end" class="type">text</text>
+</g>
+<g aria-label="dim_symptom_profile">
+<rect x="1400" y="452" width="420" height="206" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M1408 452 H1812 Q1820 452 1820 460 V496 H1400 V460 Q1400 452 1408 452 Z" fill="#376f98"/>
+<rect x="1413" y="467" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="1434" y="481" class="table-head">dim_symptom_profile</text>
+<rect x="1412" y="502" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="1425.5" y="514.5" class="key-badge" fill="#326b97">PK</text>
+<text x="1448" y="515.5" class="field" font-weight="600">symptom_profile_key</text>
+<text x="1807" y="515" text-anchor="end" class="type">bigint</text>
+<rect x="1401" y="528" width="418" height="32" fill="#f7f9fb"/>
+<line x1="1401" y1="528" x2="1819" y2="528" stroke="#edf1f5"/>
+<text x="1414" y="547.5" class="field" font-weight="400">local_swelling</text>
+<text x="1807" y="547" text-anchor="end" class="type">text</text>
+<line x1="1401" y1="560" x2="1819" y2="560" stroke="#edf1f5"/>
+<text x="1414" y="579.5" class="field" font-weight="400">muscle_paralysis_present</text>
+<text x="1807" y="579" text-anchor="end" class="type">boolean</text>
+<rect x="1401" y="592" width="418" height="32" fill="#f7f9fb"/>
+<line x1="1401" y1="592" x2="1819" y2="592" stroke="#edf1f5"/>
+<text x="1414" y="611.5" class="field" font-weight="400">blood_coagulation_failure</text>
+<text x="1807" y="611" text-anchor="end" class="type">boolean</text>
+<line x1="1401" y1="624" x2="1819" y2="624" stroke="#edf1f5"/>
+<text x="1414" y="643.5" class="field" font-weight="400">symptom_profile_label</text>
+<text x="1807" y="643" text-anchor="end" class="type">text</text>
+</g>
+<g aria-label="dim_triage">
+<rect x="1400" y="737" width="420" height="110" rx="8" class="card" stroke="#d5dee7" filter="url(#shadow)"/>
+<path d="M1408 737 H1812 Q1820 737 1820 745 V781 H1400 V745 Q1400 737 1408 737 Z" fill="#376f98"/>
+<rect x="1413" y="752" width="12" height="12" rx="2" fill="none" stroke="#dceaf4" stroke-width="1.3"/>
+<text x="1434" y="766" class="table-head">dim_triage</text>
+<rect x="1412" y="787" width="27" height="17" rx="4" fill="#e7f0f8"/>
+<text x="1425.5" y="799.5" class="key-badge" fill="#326b97">PK</text>
+<text x="1448" y="800.5" class="field" font-weight="600">triage_key</text>
+<text x="1807" y="800" text-anchor="end" class="type">bigint</text>
+<rect x="1401" y="813" width="418" height="32" fill="#f7f9fb"/>
+<line x1="1401" y1="813" x2="1819" y2="813" stroke="#edf1f5"/>
+<text x="1414" y="832.5" class="field" font-weight="400">triage_level</text>
+<text x="1807" y="832" text-anchor="end" class="type">smallint</text>
+</g>
+<path class="rel" d="M440 241 V255"/>
+<path class="rel" d="M440 673 V687"/>
+<path class="rel" d="M440 893 V907"/>
+<path class="rel" d="M1400 243 V257"/>
+<path class="rel" d="M1400 503 V517"/>
+<path class="rel" d="M1400 788 V802"/>
+<path class="rel" d="M573 344 L585 337 M573 344 H585 M573 344 L585 351"/>
+<path class="rel" d="M573 376 L585 369 M573 376 H585 M573 376 L585 383"/>
+<path class="rel" d="M573 408 L585 401 M573 408 H585 M573 408 L585 415"/>
+<path class="rel" d="M573 440 L585 433 M573 440 H585 M573 440 L585 447"/>
+<path class="rel" d="M1242 472 L1230 465 M1242 472 H1230 M1242 472 L1230 479"/>
+<path class="rel" d="M1242 504 L1230 497 M1242 504 H1230 M1242 504 L1230 511"/>
+<path class="rel" d="M1242 536 L1230 529 M1242 536 H1230 M1242 536 L1230 543"/>
+</svg>

@@ -30,7 +30,7 @@ select
     case when c.is_all_bite_sources then 'ALL' else s.bite_source_name end as bite_source,
     c.is_all_triage_levels,
     c.triage_key,
-    case when c.is_all_triage_levels then 'ALL' else t.triage_level_label end
+    case when c.is_all_triage_levels then null::smallint else t.triage_level end
         as triage_level,
     c.patient_count,
     c.paralysis_positive_count,

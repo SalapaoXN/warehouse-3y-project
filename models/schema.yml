@@ -46,11 +46,9 @@ models:
         tests: [not_null, unique]
 
   - name: dim_location
-    description: 'Province-based location dimension; region remains null until an approved mapping exists.'
+    description: 'Province-based location dimension.'
     columns:
       - name: location_key
-        tests: [not_null, unique]
-      - name: province_code
         tests: [not_null, unique]
       - name: province_name
         tests: [not_null]
@@ -59,16 +57,12 @@ models:
     columns:
       - name: bite_source_key
         tests: [not_null, unique]
-      - name: source_code
-        tests: [not_null, unique]
       - name: bite_source_name
         tests: [not_null]
 
   - name: dim_bite_position
     columns:
       - name: bite_position_key
-        tests: [not_null, unique]
-      - name: position_code
         tests: [not_null, unique]
       - name: bite_position_name
         tests: [not_null]
@@ -83,16 +77,12 @@ models:
         tests: [not_null]
 
   - name: dim_triage
-    description: 'Triage codes under an unspecified scale; severity ordering is not inferred.'
+    description: 'One row per observed numeric triage level; a null level appears only if the source is missing.'
     columns:
       - name: triage_key
         tests: [not_null, unique]
-      - name: triage_scale_code
-        tests: [not_null]
       - name: triage_level
-        tests: [not_null]
-      - name: triage_level_label
-        tests: [not_null]
+        description: 'Numeric triage level from the source; null only when the source value is missing.'
 
   - name: fact_bite_triage
     description: 'One row per patient_id in the current source snapshot; patient_id is both the grain and primary business key.'
@@ -159,7 +149,7 @@ models:
     description: 'Daily arrival detail for drill-down.'
 
   - name: rpt_bite_triage_patient_detail
-    description: 'One row per patient-grain fact row with readable date, province, animal source, bite position, symptoms, and triage values for Metabase. Technical IDs and source lineage fields are omitted.'
+    description: 'One row per patient-grain fact row with readable date, province, animal source, bite position, symptoms, and numeric triage level for Metabase. Technical IDs and source lineage fields are omitted.'
 
   - name: rpt_bite_triage_location_source_level_cube
     description: 'CUBE subtotals across location, bite source, and triage level.'
